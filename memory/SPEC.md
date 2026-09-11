@@ -13,9 +13,12 @@ gelen Host başlığına göre ilgili siteyi render eder; panelden `/?site=<slug
   **columns (1-6)**, **items: PopupItem[]** — pop-up artık kolonlu marka kartı gridi
 - **PopupItem**: id, brand_name, logo_url, line1, line2, url, border_color, col_span, order
 - **AdSlot**: id, site_id, type("image"|"html"|"cta"), title, badge,
-  **badge_position ("left"|"center"|"right")**, description (1. satır), **line2**,
-  image_url (logo), target_url, html, cta_text, **border_color** (neon çerçeve),
+  **badge_position ("left"|"center"|"right")**, **badge_bg** + **badge_text_color**
+  (boşsa kartın neon rengi / siyah), **text_size ("sm"|"md"|"lg")**, description (1. satır),
+  **line2**, image_url (logo), target_url, html, cta_text, **border_color** (neon çerçeve),
   col_span, height, order, active, clicks, created_at
+  - Yazı ölçekleri `TEXT_SIZE_CLASSES` (frontend/src/lib/types.ts): sm 11/9px, md 13/10px,
+    lg 16/12px (mobil) — sm/md/lg masaüstünde base/xl/2xl
 
 ## Ziyaretçi tasarımı (tuna40 tarzı)
 Tek satır header: solda logo, **ortada kayan yazı (marquee, iki yanı maskeli)**, sağda
@@ -23,7 +26,8 @@ Tek satır header: solda logo, **ortada kayan yazı (marquee, iki yanı maskeli)
 koyu plaka, neon çerçeve + köşe braketleri, ortada logo/marka adı ve iki bonus satırı.
 Grid başlığı = site.title, altındaki ince satır = site.tagline (ikisi de panelden).
 Pop-up (deniz23 tarzı) aynı kart dilini kolonlu grid olarak kullanır, sağ üstte kırmızı
-yuvarlak kapatma butonu.
+yuvarlak kapatma butonu. Pop-up her ekran boyutunda dikey ortalanır (`items-center` +
+`my-auto`); mobilde kapatma butonu panelin iç sağ üstünde durur.
 
 ## Mobil davranış (masaüstü paritesi)
 Grid ve pop-up kolon sayısı ile kart sırası mobilde masaüstüyle **birebir aynıdır**

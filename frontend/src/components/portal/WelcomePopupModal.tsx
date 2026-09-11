@@ -48,19 +48,19 @@ export default function WelcomePopupModal({ popup, accent }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/85 p-4 py-10 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/85 p-3 backdrop-blur-sm sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={popup.title}
       data-testid="welcome-popup-modal"
       onClick={(e) => e.target === e.currentTarget && setOpen(false)}
     >
-      <div className="animate-pop-in relative w-full max-w-2xl">
+      <div className="animate-pop-in relative my-auto w-full max-w-2xl">
         <button
           onClick={() => setOpen(false)}
           aria-label="Kapat"
           data-testid="popup-close-button"
-          className="absolute -top-4 right-0 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-transform duration-150 hover:scale-110 hover:bg-red-500 sm:-right-4"
+          className="absolute right-1 top-1 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-transform duration-150 hover:scale-110 hover:bg-red-500 sm:-right-4 sm:-top-4 sm:h-11 sm:w-11"
         >
           <X className="h-5 w-5" strokeWidth={3} />
         </button>

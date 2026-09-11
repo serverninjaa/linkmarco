@@ -1,4 +1,5 @@
 import type { AdSlot } from "@/lib/types";
+import { TEXT_SIZE_CLASSES } from "@/lib/types";
 import { apiPost } from "@/lib/api";
 import type { CSSProperties } from "react";
 
@@ -31,6 +32,11 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
   // Yükseklik mobilde oransal küçülür, sm ve üstünde panelde girilen değere döner.
   const heightVar = { "--card-h": `${slot.height}px` } as CSSProperties;
   const heightCls = "min-h-[calc(var(--card-h)*0.62)] sm:min-h-[var(--card-h)]";
+
+  // Rozet renkleri panelden bağımsız seçilebilir; boşsa kartın neon rengi kullanılır.
+  const badgeBg = slot.badge_bg || color;
+  const badgeFg = slot.badge_text_color || "#000000";
+  const sizeCls = TEXT_SIZE_CLASSES[slot.text_size] ?? TEXT_SIZE_CLASSES.md;
 
   // Rozet konumu panelden seçilir; mobilde başlığı kapatmaması için üstte konumlanır.
   const badgePos =
@@ -96,7 +102,7 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
       {slot.badge ? (
         <span
           className={`absolute top-0 z-10 rounded-b px-1.5 py-px text-[9px] font-black leading-tight tracking-wide sm:px-2 sm:py-0.5 sm:text-[10px] sm:tracking-widest ${badgePos}`}
-          style={{ background: color, color: "#000" }}
+          style={{ background: badgeBg, color: badgeFg }}
           data-testid="ad-card-badge"
         >
           {slot.badge}
@@ -118,7 +124,7 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
         ) : null}
 
         <h3
-          className="font-heading text-[13px] font-black uppercase leading-tight tracking-tight sm:text-xl"
+          className={`font-heading font-black uppercase leading-tight tracking-tight ${sizeCls.title}`}
           style={{ color: slot.type === "image" && slot.image_url ? "#FFFFFF" : color }}
           data-testid="ad-card-title"
         >
@@ -127,7 +133,7 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
 
         {slot.description ? (
           <p
-            className="text-[10px] font-bold uppercase leading-snug tracking-tight text-slate-100 sm:text-[11px] sm:tracking-wide"
+            className={`font-bold uppercase leading-snug tracking-tight text-slate-100 sm:tracking-wide ${sizeCls.line}`}
             data-testid="ad-card-line1"
           >
             {slot.description}
@@ -135,7 +141,7 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
         ) : null}
         {slot.line2 ? (
           <p
-            className="text-[10px] font-bold uppercase leading-snug tracking-tight sm:text-[11px] sm:tracking-wide"
+            className={`font-bold uppercase leading-snug tracking-tight sm:tracking-wide ${sizeCls.line}`}
             style={{ color }}
             data-testid="ad-card-line2"
           >

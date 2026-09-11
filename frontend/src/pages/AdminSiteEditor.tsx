@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import type { AdSlot, AdType, BadgePosition, PopupItem, Site } from "@/lib/types";
-import { AD_TYPE_LABELS, BADGE_POSITION_LABELS, NEON_COLORS } from "@/lib/types";
+import type { AdSlot, AdType, BadgePosition, PopupItem, Site, TextSize } from "@/lib/types";
+import { AD_TYPE_LABELS, BADGE_POSITION_LABELS, NEON_COLORS, TEXT_SIZE_LABELS } from "@/lib/types";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,9 @@ export default function AdminSiteEditor() {
         title: "YENİ MARKA",
         badge: "",
         badge_position: "center",
+        badge_bg: "",
+        badge_text_color: "",
+        text_size: "md",
         description: "500₺ DENEME BONUSU",
         line2: "%30 KAYIP BONUSU",
         image_url: "",
@@ -626,7 +629,8 @@ export default function AdminSiteEditor() {
                         {AD_TYPE_LABELS[slot.type]}
                       </span>
                       <span className="hidden font-mono text-[10px] text-slate-500 md:inline">
-                        {slot.col_span} kolon · {slot.clicks} tıklama · {slot.active ? "yayında" : "pasif"}
+                        {slot.col_span} kolon · {TEXT_SIZE_LABELS[slot.text_size]} yazı · {slot.clicks} tıklama ·{" "}
+                        {slot.active ? "yayında" : "pasif"}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -709,6 +713,57 @@ export default function AdminSiteEditor() {
                           {(["left", "center", "right"] as BadgePosition[]).map((p) => (
                             <SelectItem key={p} value={p}>
                               {BADGE_POSITION_LABELS[p]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Rozet Arka Plan Rengi" id={`s-bbg-${slot.id}`}>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={`s-bbg-${slot.id}`}
+                          type="color"
+                          defaultValue={slot.badge_bg || slot.border_color || "#22C55E"}
+                          onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { badge_bg: e.target.value } })}
+                          className="h-9 w-10 cursor-pointer rounded border border-[#1E293B] bg-transparent"
+                          data-testid="slot-badge-bg-input"
+                        />
+                        <code className="font-mono text-xs text-slate-400">
+                          {slot.badge_bg || "kart rengi"}
+                        </code>
+                      </div>
+                    </Field>
+                    <Field label="Rozet Yazı Rengi" id={`s-bfg-${slot.id}`}>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={`s-bfg-${slot.id}`}
+                          type="color"
+                          defaultValue={slot.badge_text_color || "#000000"}
+                          onBlur={(e) =>
+                            updateSlot.mutate({ id: slot.id, patch: { badge_text_color: e.target.value } })
+                          }
+                          className="h-9 w-10 cursor-pointer rounded border border-[#1E293B] bg-transparent"
+                          data-testid="slot-badge-text-input"
+                        />
+                        <code className="font-mono text-xs text-slate-400">
+                          {slot.badge_text_color || "siyah"}
+                        </code>
+                      </div>
+                    </Field>
+                    <Field label="Yazı Boyutu" id={`s-ts-${slot.id}`}>
+                      <Select
+                        value={slot.text_size}
+                        onValueChange={(v: string) =>
+                          updateSlot.mutate({ id: slot.id, patch: { text_size: v as TextSize } })
+                        }
+                      >
+                        <SelectTrigger id={`s-ts-${slot.id}`} data-testid="slot-text-size-select">
+                          <SelectValue>{(v) => TEXT_SIZE_LABELS[v as string]}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(["sm", "md", "lg"] as TextSize[]).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {TEXT_SIZE_LABELS[s]}
                             </SelectItem>
                           ))}
                         </SelectContent>

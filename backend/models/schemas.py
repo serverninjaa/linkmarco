@@ -91,6 +91,7 @@ class Site(SiteBase):
 
 AdType = Literal["image", "html", "cta"]
 BadgePosition = Literal["left", "center", "right"]
+TextSize = Literal["sm", "md", "lg"]
 
 
 class AdSlotBase(BaseModel):
@@ -99,6 +100,10 @@ class AdSlotBase(BaseModel):
     title: str = ""
     badge: str = ""
     badge_position: BadgePosition = "center"
+    # Boş bırakılırsa kartın neon rengi / siyah yazı kullanılır.
+    badge_bg: str = ""
+    badge_text_color: str = ""
+    text_size: TextSize = "md"
     description: str = ""
     line2: str = ""
     image_url: str = ""
@@ -121,6 +126,9 @@ class AdSlotUpdate(BaseModel):
     title: Optional[str] = None
     badge: Optional[str] = None
     badge_position: Optional[BadgePosition] = None
+    badge_bg: Optional[str] = None
+    badge_text_color: Optional[str] = None
+    text_size: Optional[TextSize] = None
     description: Optional[str] = None
     line2: Optional[str] = None
     image_url: Optional[str] = None

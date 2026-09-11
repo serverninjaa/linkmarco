@@ -53,6 +53,7 @@ export interface Site {
 
 export type AdType = "image" | "html" | "cta";
 export type BadgePosition = "left" | "center" | "right";
+export type TextSize = "sm" | "md" | "lg";
 
 export interface AdSlot {
   id: string;
@@ -61,6 +62,9 @@ export interface AdSlot {
   title: string;
   badge: string;
   badge_position: BadgePosition;
+  badge_bg: string;
+  badge_text_color: string;
+  text_size: TextSize;
   description: string;
   line2: string;
   image_url: string;
@@ -102,6 +106,19 @@ export const BADGE_POSITION_LABELS: Record<string, string> = {
   left: "Sol Üst",
   center: "Orta Üst",
   right: "Sağ Üst",
+};
+
+export const TEXT_SIZE_LABELS: Record<string, string> = {
+  sm: "Küçük",
+  md: "Orta",
+  lg: "Büyük",
+};
+
+// Kart yazı ölçekleri: [mobil başlık, masaüstü başlık, mobil satır, masaüstü satır]
+export const TEXT_SIZE_CLASSES: Record<string, { title: string; line: string }> = {
+  sm: { title: "text-[11px] sm:text-base", line: "text-[9px] sm:text-[10px]" },
+  md: { title: "text-[13px] sm:text-xl", line: "text-[10px] sm:text-[11px]" },
+  lg: { title: "text-[16px] sm:text-2xl", line: "text-[12px] sm:text-[13px]" },
 };
 
 export const AD_TYPE_LABELS: Record<string, string> = {
