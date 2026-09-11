@@ -140,3 +140,9 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - CPU AVX desteklemiyorsa MongoDB 5.0+ calismaz (signal=ILL). Cozum: Docker ile mongo:4.4 (port 127.0.0.1:27017, volume /var/lib/mongo44).
 - backend/requirements.txt icindeki emergentintegrations Emergent ozel deposunda; uretimde deploy/requirements-prod.txt kullanilir.
 - Ubuntu 24.04 (noble) icin MongoDB apt deposu 8.0 surumudur (7.0 noble icermez).
+
+## Host bazli yonlendirme (panel vs portal)
+- backend/.env: PANEL_DOMAIN (bos ise preview davranisi: bilinen reklam domaini portal, digerleri panel)
+- GET /api/public/host-role -> {host, role: panel|portal, slug, panel_domain}
+- frontend/src/components/HostGate.tsx: kok adres panelde /admin e yonlendirir, reklam domaininde PublicPortal gosterir; ?site=slug her zaman onizleme portali
+- AdminOnlyHost: /admin* rotalari reklam domainlerinde 404 ekrani gosterir (Nginx tarafinda da location /admin return 404)

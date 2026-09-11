@@ -286,3 +286,11 @@ export interface CfSslSettings {
   ssl: string;
   always_use_https: boolean;
 }
+
+// backend/routers/public.py → HostRole ile 1:1
+export interface HostRole {
+  host: string;
+  role: "panel" | "portal";
+  slug?: string | null;
+  panel_domain: string;
+}

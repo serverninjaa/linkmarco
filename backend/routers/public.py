@@ -1,8 +1,10 @@
 """Public visitor API — resolves the active site by Host header or ?slug= preview."""
 
+import os
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
 from lib.dates import now_tz
 from lib.db import db
@@ -13,6 +15,39 @@ router = APIRouter(prefix="/public", tags=["public"])
 
 def _normalize(host: str) -> str:
     return host.split(":")[0].strip().lower().removeprefix("www.")
+
+
+class HostRole(BaseModel):
+    """Gelen Host başlığının rolü: yönetim paneli mi, ziyaretçi portalı mı."""
+
+    host: str
+    role: str  # "panel" | "portal"
+    slug: Optional[str] = None
+    panel_domain: str = ""
+
+
+@router.get("/host-role", response_model=HostRole)
+async def host_role(request: Request, host: Optional[str] = None):
+    candidate = _normalize(host or request.headers.get("host", ""))
+    panel_domain = _normalize(os.environ.get("PANEL_DOMAIN", ""))
+
+    # Panel domaini tanımlıysa yalnızca o host paneldir.
+    if panel_domain:
+        if candidate == panel_domain:
+            return HostRole(host=candidate, role="panel", panel_domain=panel_domain)
+        site = await db.sites.find_one({"domains": candidate}, {"slug": 1})
+        return HostRole(
+            host=candidate,
+            role="portal",
+            slug=(site or {}).get("slug"),
+            panel_domain=panel_domain,
+        )
+
+    # PANEL_DOMAIN tanımsız (preview/geliştirme): bilinen reklam domainiyse portal, değilse panel.
+    site = await db.sites.find_one({"domains": candidate}, {"slug": 1})
+    if site:
+        return HostRole(host=candidate, role="portal", slug=site.get("slug"))
+    return HostRole(host=candidate, role="panel")
 
 
 @router.get("/site", response_model=PublicSite)
