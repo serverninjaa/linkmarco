@@ -19,13 +19,19 @@ if ! command -v node >/dev/null; then
 fi
 npm install -g yarn >/dev/null
 
-echo "==> MongoDB 7 deposu"
+echo "==> MongoDB deposu (Ubuntu sürümüne göre)"
 if ! command -v mongod >/dev/null; then
-  curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc \
-    | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
   CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")"
-  echo "deb [signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/ubuntu ${CODENAME}/mongodb-org/7.0 multiverse" \
-    > /etc/apt/sources.list.d/mongodb-org-7.0.list
+  # noble (24.04) için MongoDB 8.0, jammy (22.04) için 7.0 yayınlanmıştır.
+  case "$CODENAME" in
+    noble) MONGO_VER="8.0" ;;
+    *)     MONGO_VER="7.0" ;;
+  esac
+  rm -f /etc/apt/sources.list.d/mongodb-org-*.list
+  curl -fsSL "https://pgp.mongodb.com/server-${MONGO_VER}.asc" \
+    | gpg --dearmor -o "/usr/share/keyrings/mongodb-server-${MONGO_VER}.gpg"
+  echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-${MONGO_VER}.gpg ] https://repo.mongodb.org/apt/ubuntu ${CODENAME}/mongodb-org/${MONGO_VER} multiverse" \
+    > "/etc/apt/sources.list.d/mongodb-org-${MONGO_VER}.list"
   apt-get update -y
   apt-get install -y mongodb-org
 fi
