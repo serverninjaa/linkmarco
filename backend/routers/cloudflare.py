@@ -292,13 +292,17 @@ async def autowire(payload: CfAutowireRequest):
         zone = await create_zone(CfZoneCreate(name=domain))
         created_zone = True
 
-    existing = {r.name: r for r in await list_records(zone.id)}
+    records = await list_records(zone.id)
     out: List[CfRecord] = []
     for name in (domain, f"www.{domain}"):
         desired = CfRecordInput(type="A", name=name, content=server_ip, ttl=1, proxied=True)
-        current = existing.get(name)
-        if current and current.type in ("A", "CNAME"):
-            out.append(await update_record(zone.id, current.id, desired))
+        # Aynı isimdeki A/CNAME kayıtları çakışır (Cloudflare "record with that host already
+        # exists" hatası): ilkini güncelle, fazlalıkları sil. MX/TXT gibi kayıtlara dokunulmaz.
+        conflicting = [r for r in records if r.name == name and r.type in ("A", "CNAME")]
+        if conflicting:
+            out.append(await update_record(zone.id, conflicting[0].id, desired))
+            for extra in conflicting[1:]:
+                await call("DELETE", f"/zones/{zone.id}/dns_records/{extra.id}")
         else:
             out.append(await create_record(zone.id, desired))
 

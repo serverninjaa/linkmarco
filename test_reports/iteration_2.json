@@ -1,0 +1,60 @@
+{
+  "iteration": 2,
+  "summary": "New briefing (Cloudflare autowire bug fix + host-based routing): 6/6 acceptance criteria exercised, 4/4 backend pytest cases passed, 3/3 browser checks passed.",
+  "passed": 7,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "BUG FIX: autowire works when a conflicting CNAME already exists for www",
+      "name": "test_tscheck_autowire_www_conflict.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "On sultan5.com zone: planted a CNAME www.sultan5.com -> tscheck-conflict.example.com; POST /api/cloudflare/autowire {domain: sultan5.com} -> 200 (not 400); response.records contain A sultan5.com and A www.sultan5.com both content=203.161.57.207, proxied=true; follow-up GET /zones/{id}/records shows exactly one A/CNAME record per name (no duplicate/leftover CNAME)."
+    },
+    {
+      "criterion": "autowire with site_id attaches the domain to the chosen site",
+      "name": "test_tscheck_autowire_www_conflict.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "Created fixture site tscheck-autowire-<uuid> via POST /api/sites -> 201; POST /api/cloudflare/autowire {domain: sultan5.com, site_id} -> 200; GET /api/sites shows that site's domains array containing 'sultan5.com'. (Kept in the same module as the CNAME-conflict test on purpose: pytest.ini fixes -n 2 --dist loadscope, and separate modules mutating the same live sultan5.com zone concurrently produced a real cross-worker race — 'Record does not exist' 400 — confirmed by re-running serially with -n 0 where both passed cleanly.)"
+    },
+    {
+      "criterion": "Host-based routing: panel vs portal",
+      "name": "test_tscheck_host_role.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/public/host-role?host=marco.com -> 200 {role: portal, slug: marco}; GET ?host=tscheck-unknown-host.example.com -> 200 {role: panel, slug: null} (PANEL_DOMAIN empty in this env, as documented)."
+    },
+    {
+      "criterion": "Root URL on panel host redirects to admin login; ?site= preview still shows portal",
+      "name": "root-panel-redirect-and-preview-portal",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Navigated to '/' -> admin-login-form visible with 'Yönetim Girişi' heading; navigated to '/?site=marco' -> welcome-popup-modal visible (visitor portal renders even on the panel host when previewing)."
+    },
+    {
+      "criterion": "Admin login and panel still work after the routing change",
+      "name": "admin-login-protects-routes",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Re-ran persisted check: /admin without session shows login form; login admin/admin123 -> 'Siteler & Domainler' heading with site cards rendered."
+    },
+    {
+      "criterion": "Cloudflare panel page renders live data",
+      "name": "cloudflare-panel-renders-live-data",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "/admin/cloudflare shows cf-connection-status containing 'Bağlı'; cf-zone-list contains both marcopanel.site and sultan5.com; cf-domain-list/cf-domains-empty visible; cf-ssl-panel with 'SSL & Önbellek' heading visible."
+    }
+  ],
+  "notes": [
+    "Backend probe (curl localhost:8001/api) returned 200 before testing began.",
+    "pytest.ini fixes addopts to '-n 2 --dist loadscope' and forbids modifying it; loadscope schedules whole modules to workers, so two Cloudflare-mutating tests in separate modules against the same live sultan5.com zone raced (confirmed failure only under the mandated -n2 config, passed under -n0). Fix: merged both into one module (test_tscheck_autowire_www_conflict.py) so xdist pins them to the same worker — both criteria still get dedicated, isolated test functions.",
+    "Console noise on the Cloudflare panel page: a React 'duplicate key sultan5.com' warning appears because the panel's domain-verification list keys rows by domain string and my own repeated test runs attached 'sultan5.com' to several tscheck-autowire-* fixture sites (residue in my own namespace, not seeded data). Not filed as a bug: it is not one of the 6 acceptance criteria, does not break rendering (all elements still asserted visible), and is caused by test-fixture repetition rather than normal product usage.",
+    "spec_deviations honored: did not touch or delete the marcopanel.site zone; all DNS writes/reads used sultan5.com only.",
+    "6/6 criteria in the briefing's acceptance_matrix were exercised (within the 8-criterion cap)."
+  ]
+}
