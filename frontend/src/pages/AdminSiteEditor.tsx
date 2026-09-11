@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import type { AdSlot, AdType, BadgePosition, PopupItem, Site, TextSize } from "@/lib/types";
-import { AD_TYPE_LABELS, BADGE_POSITION_LABELS, NEON_COLORS, TEXT_SIZE_LABELS } from "@/lib/types";
+import type { AdSlot, AdType, BadgePosition, BadgeStyle, PopupItem, Site, TextSize } from "@/lib/types";
+import { AD_TYPE_LABELS, BADGE_POSITION_LABELS, BADGE_STYLE_LABELS, NEON_COLORS, TEXT_SIZE_LABELS } from "@/lib/types";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,7 @@ export default function AdminSiteEditor() {
         title: "YENİ MARKA",
         badge: "",
         badge_position: "center",
+        badge_style: "tab",
         badge_bg: "",
         badge_text_color: "",
         text_size: "md",
@@ -713,6 +714,25 @@ export default function AdminSiteEditor() {
                           {(["left", "center", "right"] as BadgePosition[]).map((p) => (
                             <SelectItem key={p} value={p}>
                               {BADGE_POSITION_LABELS[p]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Rozet Stili" id={`s-bst-${slot.id}`}>
+                      <Select
+                        value={slot.badge_style}
+                        onValueChange={(v: string) =>
+                          updateSlot.mutate({ id: slot.id, patch: { badge_style: v as BadgeStyle } })
+                        }
+                      >
+                        <SelectTrigger id={`s-bst-${slot.id}`} data-testid="slot-badge-style-select">
+                          <SelectValue>{(v) => BADGE_STYLE_LABELS[v as string]}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(["tab", "corner", "strip", "ribbon"] as BadgeStyle[]).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {BADGE_STYLE_LABELS[s]}
                             </SelectItem>
                           ))}
                         </SelectContent>

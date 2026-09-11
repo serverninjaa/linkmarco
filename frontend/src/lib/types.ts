@@ -53,6 +53,7 @@ export interface Site {
 
 export type AdType = "image" | "html" | "cta";
 export type BadgePosition = "left" | "center" | "right";
+export type BadgeStyle = "tab" | "corner" | "strip" | "ribbon";
 export type TextSize = "sm" | "md" | "lg";
 
 export interface AdSlot {
@@ -62,6 +63,7 @@ export interface AdSlot {
   title: string;
   badge: string;
   badge_position: BadgePosition;
+  badge_style: BadgeStyle;
   badge_bg: string;
   badge_text_color: string;
   text_size: TextSize;
@@ -106,6 +108,13 @@ export const BADGE_POSITION_LABELS: Record<string, string> = {
   left: "Sol Üst",
   center: "Orta Üst",
   right: "Sağ Üst",
+};
+
+export const BADGE_STYLE_LABELS: Record<string, string> = {
+  tab: "Sekme",
+  corner: "Köşe",
+  strip: "Şerit",
+  ribbon: "Kurdele",
 };
 
 export const TEXT_SIZE_LABELS: Record<string, string> = {

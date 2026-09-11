@@ -38,13 +38,80 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
   const badgeFg = slot.badge_text_color || "#000000";
   const sizeCls = TEXT_SIZE_CLASSES[slot.text_size] ?? TEXT_SIZE_CLASSES.md;
 
-  // Rozet konumu panelden seçilir; mobilde başlığı kapatmaması için üstte konumlanır.
+  // Rozet konumu + stili panelden seçilir; mobilde başlığı kapatmaması için üstte durur.
   const badgePos =
     slot.badge_position === "left"
       ? "left-1.5 sm:left-2.5"
       : slot.badge_position === "right"
         ? "right-1.5 sm:right-2.5"
         : "left-1/2 -translate-x-1/2";
+  const badgeText = "text-[9px] font-black leading-tight tracking-wide sm:text-[10px] sm:tracking-widest";
+
+  // Köşe stili merkez seçiminde sağ köşeye yerleşir (köşe sadece sol/sağ olabilir).
+  const cornerSide = slot.badge_position === "left" ? "left" : "right";
+
+  const renderBadge = () => {
+    if (!slot.badge) return null;
+    const colors = { background: badgeBg, color: badgeFg };
+
+    if (slot.badge_style === "strip") {
+      return (
+        <span
+          className={`absolute left-0 right-0 top-0 z-10 px-2 py-0.5 ${badgeText} ${
+            slot.badge_position === "left"
+              ? "text-left"
+              : slot.badge_position === "right"
+                ? "text-right"
+                : "text-center"
+          }`}
+          style={colors}
+          data-testid="ad-card-badge"
+        >
+          {slot.badge}
+        </span>
+      );
+    }
+
+    if (slot.badge_style === "corner") {
+      // Çapraz bar köşeyi kartın İÇİNDE keser; mobilde dar kartlar için daha küçük.
+      return (
+        <span
+          className={`absolute top-[7px] z-10 w-[74px] py-px text-center sm:top-[14px] sm:w-[110px] sm:py-0.5 ${badgeText} ${
+            cornerSide === "left"
+              ? "left-[-24px] -rotate-45 sm:left-[-33px]"
+              : "right-[-24px] rotate-45 sm:right-[-33px]"
+          }`}
+          style={colors}
+          data-testid="ad-card-badge"
+        >
+          {slot.badge}
+        </span>
+      );
+    }
+
+    if (slot.badge_style === "ribbon") {
+      return (
+        <span
+          className={`absolute top-0 z-10 px-2.5 pb-1.5 pt-0.5 ${badgeText} ${badgePos}`}
+          style={{ ...colors, clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 62%, 0 100%)" }}
+          data-testid="ad-card-badge"
+        >
+          {slot.badge}
+        </span>
+      );
+    }
+
+    // tab (varsayılan)
+    return (
+      <span
+        className={`absolute top-0 z-10 rounded-b px-1.5 py-px sm:px-2 sm:py-0.5 ${badgeText} ${badgePos}`}
+        style={colors}
+        data-testid="ad-card-badge"
+      >
+        {slot.badge}
+      </span>
+    );
+  };
 
   if (slot.type === "html") {
     return (
@@ -99,19 +166,17 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
         />
       ))}
 
-      {slot.badge ? (
-        <span
-          className={`absolute top-0 z-10 rounded-b px-1.5 py-px text-[9px] font-black leading-tight tracking-wide sm:px-2 sm:py-0.5 sm:text-[10px] sm:tracking-widest ${badgePos}`}
-          style={{ background: badgeBg, color: badgeFg }}
-          data-testid="ad-card-badge"
-        >
-          {slot.badge}
-        </span>
-      ) : null}
+      {renderBadge()}
 
       <div
         className={`flex h-full flex-col items-center justify-center gap-1 px-2 text-center sm:gap-2 sm:px-5 sm:py-6 ${
-          slot.badge ? "pb-2 pt-5 sm:pt-6" : "py-3"
+          slot.badge
+            ? slot.badge_style === "ribbon"
+              ? "pb-2 pt-7 sm:pt-8"
+              : slot.badge_style === "corner"
+                ? "pb-2 pt-6 sm:pt-6"
+                : "pb-2 pt-5 sm:pt-6"
+            : "py-3"
         }`}
       >
         {slot.type === "image" && slot.image_url ? (

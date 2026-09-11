@@ -13,10 +13,15 @@ gelen Host başlığına göre ilgili siteyi render eder; panelden `/?site=<slug
   **columns (1-6)**, **items: PopupItem[]** — pop-up artık kolonlu marka kartı gridi
 - **PopupItem**: id, brand_name, logo_url, line1, line2, url, border_color, col_span, order
 - **AdSlot**: id, site_id, type("image"|"html"|"cta"), title, badge,
-  **badge_position ("left"|"center"|"right")**, **badge_bg** + **badge_text_color**
-  (boşsa kartın neon rengi / siyah), **text_size ("sm"|"md"|"lg")**, description (1. satır),
+  **badge_position ("left"|"center"|"right")**, **badge_style ("tab"|"corner"|"strip"|"ribbon")**,
+  **badge_bg** + **badge_text_color** (boşsa kartın neon rengi / siyah),
+  **text_size ("sm"|"md"|"lg")**, description (1. satır),
   **line2**, image_url (logo), target_url, html, cta_text, **border_color** (neon çerçeve),
   col_span, height, order, active, clicks, created_at
+  - Rozet stilleri: tab = üstte sekme, corner = köşeyi çapraz kesen bar (mobilde küçültülür,
+    sadece sol/sağ; merkez seçilirse sağ köşe), strip = tam genişlik şerit (metin konuma göre
+    hizalanır), ribbon = clip-path ile çentikli kurdele. İçerik üst dolgusu stile göre artar,
+    böylece rozet başlığı kapatmaz.
   - Yazı ölçekleri `TEXT_SIZE_CLASSES` (frontend/src/lib/types.ts): sm 11/9px, md 13/10px,
     lg 16/12px (mobil) — sm/md/lg masaüstünde base/xl/2xl
 

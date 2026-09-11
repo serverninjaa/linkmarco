@@ -163,6 +163,8 @@ async def main() -> None:
                 badge=badge,
                 # Geniş kartlarda orta üst, tek kolonlarda sol üst — panelden değiştirilebilir.
                 badge_position="center" if span >= 2 else "left",
+                # Demo: geniş kartlarda şerit, tek kolonlarda köşe rozeti
+                badge_style="strip" if span >= 3 else ("ribbon" if span == 2 else "corner"),
                 description=line1,
                 line2=line2,
                 target_url="https://example.com/git",
