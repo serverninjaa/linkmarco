@@ -90,7 +90,6 @@ export default function AdminLogin() {
           >
             {login.isPending ? "Giriş yapılıyor..." : "GİRİŞ YAP"}
           </Button>
-          <p className="text-center text-xs text-slate-500">Demo hesap: admin / admin123</p>
         </form>
       </div>
     </div>
