@@ -1,0 +1,92 @@
+{
+  "iteration": 4,
+  "summary": "Retest of Global API Key credential switch: 6/6 acceptance criteria exercised, 25/25 backend pytest cases passed (2 new + 1 updated in a new file, 2 pre-existing obsolete assertions updated to match new success behavior, 21 unrelated pre-existing passed), 4/4 browser checks passed (1 rewritten + 3 re-run persisted by name).",
+  "passed": 10,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "Cache purge now works with Global API Key credentials (backend)",
+      "name": "test_tscheck_global_key_cf.py::test_purge_cache_succeeds_with_global_key",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/cloudflare/zones/e2933ef25eec2b393f57c2af845376e4/purge-cache -> 200 {ok: true}."
+    },
+    {
+      "criterion": "Cache purge now works with Global API Key credentials (UI toast)",
+      "name": "cloudflare-purge-cache-actionable-toast",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Logged in admin/admin123, opened /admin/cloudflare, selected sultan5.com zone, clicked cf-purge-cache-button; XHR POST purge-cache returned 200 {ok:true}; sonner toast text captured verbatim as 'Cloudflare önbelleği boşaltıldı' (success toast, matches briefing expectation exactly)."
+    },
+    {
+      "criterion": "Cloudflare status reflects Global Key auth",
+      "name": "test_tscheck_global_key_cf.py::test_cloudflare_status_reflects_global_key_auth",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/cloudflare/status -> 200 {configured: true, token_valid: true, token_status contains 'global key' (case-insensitive), account_name set, server_ip: '203.161.57.207'}."
+    },
+    {
+      "criterion": "Zone create works with Global Key",
+      "name": "test_tscheck_global_key_cf.py::test_zone_create_succeeds_with_global_key",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/cloudflare/zones {name: 'tscheck-<10-hex>.com'} -> 200 with id, name, name_servers present (pending zone created at Cloudflare; not deleted per instructions -- zone name recorded above, random per run, prefix tscheck-)."
+    },
+    {
+      "criterion": "SSL read/write still fine",
+      "name": "test_tscheck_global_key_cf.py::test_ssl_settings_roundtrip_sultan5",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/cloudflare/zones/e2933ef25eec2b393f57c2af845376e4/ssl -> 200 {ssl: 'flexible', always_use_https: true}; PUT toggled to false then confirmed via GET; restored to true in finally block. Post-test curl confirms final state {ssl: 'flexible', always_use_https: true}."
+    },
+    {
+      "criterion": "autowire unaffected by the credential change",
+      "name": "test_tscheck_global_key_cf.py::test_autowire_unaffected_by_global_key_switch",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/cloudflare/autowire {domain: sultan5.com} -> 200; GET /api/cloudflare/zones/{zone}/records shows A records for sultan5.com and www.sultan5.com both = 203.161.57.207, proxied: true."
+    },
+    {
+      "criterion": "verify-domains unaffected",
+      "name": "test_tscheck_global_key_cf.py::test_verify_domains_unaffected",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/cloudflare/verify-domains -> 200, list returned."
+    },
+    {
+      "criterion": "admin UI unaffected (login, Cloudflare panel renders status/zones/domain rows/SSL panel)",
+      "name": "cloudflare-panel-renders-live-data",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Re-ran persisted check: logged in admin/admin123, /admin/cloudflare shows 'Bağlı' connection status, live zone list, Domain Doğrulama rows, and SSL & Önbellek panel widgets rendered without crash."
+    },
+    {
+      "criterion": "admin login/route protection unaffected",
+      "name": "admin-login-protects-routes",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Re-ran persisted check: /admin without session shows admin-login-form; login admin/admin123 -> 'Siteler & Domainler' heading visible."
+    },
+    {
+      "criterion": "host routing / preview-ingress path unaffected (also exercises base_url ingress once per instructions)",
+      "name": "root-panel-redirect-and-preview-portal",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Re-ran persisted check against the preview base_url ingress: '/' shows admin-login-form; '/?site=marco' shows visitor portal popup."
+    }
+  ],
+  "notes": [
+    "Backend probe (curl localhost:8001/api) returned 200 before testing began; full pytest suite: 25 passed.",
+    "New file test_tscheck_global_key_cf.py added with 6 tests covering all 6 briefing criteria at the API layer (server_ip, token_status 'global key', purge-cache success, zone-create success, SSL roundtrip, autowire, verify-domains).",
+    "Updated the now-obsolete assertions in the pre-existing test_tscheck_cf_error_messages.py: purge-cache and zone-create used to assert actionable 400 permission errors (scoped-token behavior from iteration 3); with the Global API Key now configured those calls succeed, so both tests were updated in place to assert 200/success instead of being left to bit-rot as false failures. This is a behavior change caused directly by this iteration's credential switch, not a regression.",
+    "Zone-create test names use root domains (tscheck-<hex>.com) rather than subdomains (tscheck-<hex>.example.com) -- Cloudflare's zone-create API rejects subdomain-looking names with 'Please ensure you are providing the root domain' regardless of token permissions; this was discovered and fixed during this iteration, not a product bug.",
+    "cloudflare-purge-cache-actionable-toast browser check rewritten: previously asserted the old actionable-permission-error toast; now asserts the purge-cache XHR returns 200 {ok:true} and the sonner toast text is exactly 'Cloudflare önbelleği boşaltıldı' as specified by the briefing.",
+    "SSL toggle round-trip verified restored to {ssl: flexible, always_use_https: true} via a standalone post-suite curl, honoring spec_deviations (sultan5.com must stay flexible).",
+    "marcopanel.site was never mutated by any test in this iteration; all DNS/SSL writes targeted sultan5.com only.",
+    "Console noise carried over from prior iterations: a React 'duplicate key sultan5.com' warning on the Cloudflare panel from accumulated tscheck-autowire-* fixture residue (own test-fixture namespace, not seeded/production data) -- pre-existing, not newly introduced, does not break rendering, out of scope for this iteration's 6 criteria.",
+    "6/6 briefing acceptance criteria exercised (matrix within the 8-criterion cap); 2 criteria mapped to both backend+browser artifacts where both an API contract and a UI surface existed (purge-cache; admin UI coverage folded into the panel/login/routing checks)."
+  ]
+}

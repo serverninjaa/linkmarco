@@ -151,3 +151,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - deploy/auto-update.sh: origin/main degistiyse git reset --hard + pip + yarn build + systemctl restart; cron kurulumu: bash deploy/auto-update.sh --install (5 dk)
 - Log: /var/log/adcore-auto-update.log ; backend/.env repoda olmadigi icin korunur
 - Emergent Publish kendi barindirmasina yayinlar; kendi sunucuya akis: Save to GitHub -> cron
+
+### Cloudflare kimlik yontemleri
+- lib/cloudflare.py: credentials() -> Global API Key (CLOUDFLARE_EMAIL + CLOUDFLARE_API_KEY, X-Auth-* basliklari) varsa onu kullanir; yoksa CLOUDFLARE_API_TOKEN (Bearer).
+- Global Key tum izinlere sahiptir (purge + zone create); token ile purge icin Zone:Cache Purge izni gerekir.
+- status ucunda Global Key kullanilirken /user/tokens/verify yerine /zones ile dogrulama yapilir (token_status = "active (global key)").

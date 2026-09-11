@@ -7,7 +7,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from lib.cloudflare import CloudflareError, cf_request, token
+from lib.cloudflare import CloudflareError, cf_request, configured, global_key, token
 from lib.db import db
 from routers.auth import require_admin
 
@@ -188,16 +188,20 @@ async def status():
     settings = await get_settings()
     server_ip = settings.get("server_ip", "")
     auto_purge = bool(settings.get("auto_purge", True))
-    if not token():
+    if not configured():
         return CfStatus(
             configured=False,
             token_valid=False,
             server_ip=server_ip,
             auto_purge=auto_purge,
-            message="CLOUDFLARE_API_TOKEN backend/.env içinde tanımlı değil",
+            message="Cloudflare kimliği yok — .env içinde CLOUDFLARE_API_TOKEN ya da CLOUDFLARE_EMAIL + CLOUDFLARE_API_KEY girin",
         )
     try:
-        verify = await cf_request("GET", "/user/tokens/verify")
+        if global_key():
+            await cf_request("GET", "/zones", params={"per_page": 1})
+            verify = {"result": {"status": "active (global key)"}}
+        else:
+            verify = await cf_request("GET", "/user/tokens/verify")
     except CloudflareError as exc:
         return CfStatus(
             configured=True,
@@ -350,7 +354,7 @@ async def set_auto_purge(payload: CfAutoPurgeUpdate):
 async def purge_site_cache(site_id: str) -> List[str]:
     """Sitenin domainlerine ait zone'ların önbelleğini boşaltır (best-effort)."""
     settings = await get_settings()
-    if not token() or not settings.get("auto_purge", True):
+    if not configured() or not settings.get("auto_purge", True):
         return []
     site = await db.sites.find_one({"id": site_id})
     domains = [str(d).lower().removeprefix("www.") for d in (site or {}).get("domains") or []]
@@ -385,8 +389,8 @@ async def remove_domain(payload: CfDomainRemoveRequest):
     deleted: List[str] = []
     warning: Optional[str] = None
     if payload.delete_dns:
-        if not token():
-            warning = "Cloudflare token yok — DNS kayıtları silinemedi"
+        if not configured():
+            warning = "Cloudflare kimliği yok — DNS kayıtları silinemedi"
         else:
             try:
                 body = await cf_request("GET", "/zones", params={"name": domain, "per_page": 5})
@@ -418,7 +422,7 @@ async def verify_domains():
     sites = await db.sites.find().to_list(500)
 
     zones_by_name: dict = {}
-    if token():
+    if configured():
         try:
             body = await cf_request("GET", "/zones", params={"page": 1, "per_page": 200})
             zones_by_name = {z["name"]: z for z in body.get("result") or []}
