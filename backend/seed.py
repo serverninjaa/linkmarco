@@ -42,12 +42,12 @@ def popup_items(rows):
 
 SITES = [
     {
-        "slug": "tuna40",
-        "name": "Tuna40 Portal",
-        "domains": ["tuna40.com", "tuna40giris.com"],
-        "title": "TUNA40 GÜNCEL GİRİŞ ADRESİ",
+        "slug": "marco",
+        "name": "Marco Portal",
+        "domains": ["marco.com", "marcogiris.com"],
+        "title": "MARCO GÜNCEL GİRİŞ ADRESLERİ",
         "tagline": "Güvenilir bahis ve casino adreslerinin güncel giriş merkezi",
-        "logo_text": "TUNA40",
+        "logo_text": "MARCO",
         "hero_image_url": HERO,
         "marquee": [
             "Güncel giriş adresleri 7/24 güncellenir",
@@ -60,7 +60,7 @@ SITES = [
         ).model_dump(),
         "popup": Popup(
             enabled=True,
-            title="GÜNÜN EN İYİ BONUS ADRESLERİ",
+            title="MARCO — GÜNÜN EN İYİ BONUS ADRESLERİ",
             subtitle="Aşağıdaki markalardan birini seçerek anında üye olabilirsiniz",
             columns=3,
             items=popup_items(

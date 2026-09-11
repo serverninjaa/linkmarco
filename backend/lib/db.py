@@ -28,6 +28,7 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("id", ASCENDING)], name="id", unique=True),
         IndexModel([("site_id", ASCENDING), ("order", ASCENDING)], name="site_order"),
     ],
+    "uploads": [IndexModel([("id", ASCENDING)], name="id", unique=True)],
     "admins": [IndexModel([("username", ASCENDING)], name="username", unique=True)],
     "sessions": [
         IndexModel([("token", ASCENDING)], name="token", unique=True),

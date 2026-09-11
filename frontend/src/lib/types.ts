@@ -83,6 +83,10 @@ export interface AdminUser {
   username: string;
 }
 
+export interface UploadResult {
+  url: string;
+}
+
 export const DEFAULT_THEME: Theme = {
   bg: "#090B10",
   panel: "#121620",

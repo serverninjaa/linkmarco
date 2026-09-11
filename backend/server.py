@@ -64,10 +64,12 @@ async def get_status_checks():
 from routers.auth import router as auth_router, ensure_default_admin
 from routers.public import router as public_router
 from routers.sites import router as sites_router
+from routers.uploads import router as uploads_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
 api_router.include_router(sites_router)
+api_router.include_router(uploads_router)
 
 # Include the router in the main app
 app.include_router(api_router)

@@ -4,6 +4,8 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from pydantic import BaseModel
+
 from lib.db import db
 from models.schemas import (
     AdSlot,
@@ -14,6 +16,16 @@ from models.schemas import (
     SiteUpdate,
 )
 from routers.auth import require_admin
+
+
+class ReorderRequest(BaseModel):
+    ids: List[str]
+
+
+class DuplicateRequest(BaseModel):
+    slug: str
+    name: str
+    domains: List[str] = []
 
 router = APIRouter(prefix="/sites", tags=["sites"], dependencies=[Depends(require_admin)])
 
@@ -62,6 +74,30 @@ async def delete_site(site_id: str):
     return {"ok": True}
 
 
+@router.post("/{site_id}/duplicate", response_model=Site, status_code=201)
+async def duplicate_site(site_id: str, payload: DuplicateRequest):
+    """Tüm tasarım, pop-up kolonları ve reklam kartlarını yeni bir siteye kopyalar."""
+    source = await db.sites.find_one({"id": site_id})
+    if not source:
+        raise HTTPException(status_code=404, detail="Kaynak site bulunamadı")
+    if await db.sites.find_one({"slug": payload.slug}):
+        raise HTTPException(status_code=409, detail="Bu slug zaten kullanımda")
+
+    data = {k: v for k, v in source.items() if k not in {"_id", "id", "created_at"}}
+    data["slug"] = payload.slug
+    data["name"] = payload.name
+    data["domains"] = [d.lower().removeprefix("www.") for d in payload.domains]
+    clone = Site(**data)
+    await db.sites.insert_one(clone.model_dump())
+
+    slots = await db.ad_slots.find({"site_id": site_id}).sort("order", 1).to_list(500)
+    for doc in slots:
+        slot_data = {k: v for k, v in doc.items() if k not in {"_id", "id", "created_at", "clicks"}}
+        slot_data["site_id"] = clone.id
+        await db.ad_slots.insert_one(AdSlot(**slot_data).model_dump())
+    return clone
+
+
 # ---- ad slots ----
 
 
@@ -78,6 +114,15 @@ async def create_slot(site_id: str, payload: AdSlotCreate):
     slot = AdSlot(**{**payload.model_dump(), "site_id": site_id})
     await db.ad_slots.insert_one(slot.model_dump())
     return slot
+
+
+@router.post("/{site_id}/slots/reorder", response_model=List[AdSlot])
+async def reorder_slots(site_id: str, payload: ReorderRequest):
+    """Sürükle-bırak sıralaması: gönderilen id dizisi yeni sırayı belirler."""
+    for index, slot_id in enumerate(payload.ids):
+        await db.ad_slots.update_one({"id": slot_id, "site_id": site_id}, {"$set": {"order": index}})
+    docs = await db.ad_slots.find({"site_id": site_id}).sort("order", 1).to_list(500)
+    return [AdSlot(**d) for d in docs]
 
 
 @router.put("/{site_id}/slots/{slot_id}", response_model=AdSlot)

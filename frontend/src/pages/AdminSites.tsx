@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, ExternalLink, Settings2 } from "lucide-react";
+import { Plus, Trash2, ExternalLink, Settings2, Copy } from "lucide-react";
 
 export default function AdminSites() {
   const qc = useQueryClient();
@@ -17,6 +17,12 @@ export default function AdminSites() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [domain, setDomain] = useState("");
+
+  // Şablon kopyalama
+  const [cloneSource, setCloneSource] = useState<Site | null>(null);
+  const [cloneName, setCloneName] = useState("");
+  const [cloneSlug, setCloneSlug] = useState("");
+  const [cloneDomain, setCloneDomain] = useState("");
 
   const { data: sites, isError } = useQuery({
     queryKey: ["sites"],
@@ -44,6 +50,21 @@ export default function AdminSites() {
       setDomain("");
     },
     onError: () => toast.error("Site oluşturulamadı — slug benzersiz olmalı"),
+  });
+
+  const duplicate = useMutation({
+    mutationFn: () =>
+      apiPost<Site>(`/sites/${cloneSource?.id}/duplicate`, {
+        slug: cloneSlug.trim(),
+        name: cloneName.trim(),
+        domains: cloneDomain.trim() ? [cloneDomain.trim().toLowerCase()] : [],
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["sites"] });
+      toast.success("Şablon kopyalandı — tasarım ve tüm kartlar yeni siteye aktarıldı");
+      setCloneSource(null);
+    },
+    onError: () => toast.error("Kopyalanamadı — slug benzersiz olmalı"),
   });
 
   const remove = useMutation({
@@ -203,6 +224,20 @@ export default function AdminSites() {
                   <ExternalLink className="h-3.5 w-3.5" /> Önizle
                 </Link>
                 <button
+                  onClick={() => {
+                    setCloneSource(site);
+                    setCloneName(`${site.name} Kopya`);
+                    setCloneSlug(`${site.slug}-kopya`);
+                    setCloneDomain("");
+                  }}
+                  className="rounded-lg border border-[#1E293B] px-3 py-2 text-slate-400 transition-colors duration-150 hover:border-cyan-500/60 hover:text-cyan-400"
+                  aria-label="Şablonu kopyala"
+                  title="Şablonu kopyala"
+                  data-testid="site-duplicate-button"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+                <button
                   onClick={() => remove.mutate(site.id)}
                   className="rounded-lg border border-[#1E293B] px-3 py-2 text-slate-400 transition-colors duration-150 hover:border-red-500/60 hover:text-red-400"
                   aria-label="Sil"
@@ -215,6 +250,64 @@ export default function AdminSites() {
           ))}
         </div>
       )}
+
+      {/* Şablon kopyalama diyaloğu */}
+      <Dialog open={cloneSource !== null} onOpenChange={(v) => !v && setCloneSource(null)}>
+        <DialogContent className="border-[#1E293B] bg-[#121620]">
+          <DialogHeader>
+            <DialogTitle>Şablonu Kopyala</DialogTitle>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            data-testid="duplicate-site-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              duplicate.mutate();
+            }}
+          >
+            <p className="text-sm text-slate-400">
+              <strong className="text-slate-200">{cloneSource?.name}</strong> sitesinin tüm tasarımı,
+              pop-up kolonları ve reklam kartları yeni domaine kopyalanır.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="clone-name">Yeni Site Adı</Label>
+              <Input
+                id="clone-name"
+                value={cloneName}
+                onChange={(e) => setCloneName(e.target.value)}
+                data-testid="clone-name-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="clone-slug">Yeni Slug</Label>
+              <Input
+                id="clone-slug"
+                value={cloneSlug}
+                onChange={(e) => setCloneSlug(e.target.value)}
+                data-testid="clone-slug-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="clone-domain">Yeni Domain (opsiyonel)</Label>
+              <Input
+                id="clone-domain"
+                value={cloneDomain}
+                onChange={(e) => setCloneDomain(e.target.value)}
+                placeholder="yeni-domain.com"
+                data-testid="clone-domain-input"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-cyan-500 font-bold text-black hover:bg-cyan-400"
+              disabled={duplicate.isPending || !cloneSlug.trim() || !cloneName.trim()}
+              data-testid="confirm-duplicate-button"
+            >
+              {duplicate.isPending ? "Kopyalanıyor..." : "Kopyala"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AdminShell>
   );
 }

@@ -36,6 +36,18 @@ async function request<T>(method: string, path: string, body?: JsonBody): Promis
   return (await res.json()) as T;
 }
 
+// Multipart upload — never set Content-Type by hand, the browser adds the boundary.
+export async function apiUpload<T>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${BASE}${path}`, { method: "POST", body: form });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => null);
+    throw new ApiError(res.status, errBody);
+  }
+  return (await res.json()) as T;
+}
+
 // The response type is yours to declare: nothing infers across the Python boundary, so a
 // TS interface here mirrors the endpoint's Pydantic model by hand — keep the two in sync.
 export const apiGet = <T>(path: string) => request<T>("GET", path);

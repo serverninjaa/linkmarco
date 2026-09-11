@@ -13,7 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, ExternalLink, ChevronUp, ChevronDown, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, ChevronUp, ChevronDown, X, GripVertical, Pencil } from "lucide-react";
+import LogoUpload from "@/components/admin/LogoUpload";
 
 const COLORS: { key: "bg" | "panel" | "card" | "accent" | "accent2" | "text"; label: string }[] = [
   { key: "bg", label: "Arka Plan" },
@@ -29,6 +30,9 @@ export default function AdminSiteEditor() {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<Site | null>(null);
   const [newDomain, setNewDomain] = useState("");
+  const [dragItem, setDragItem] = useState<number | null>(null);
+  const [dragSlot, setDragSlot] = useState<number | null>(null);
+  const [openSlot, setOpenSlot] = useState<string | null>(null);
 
   const { data: site } = useQuery({
     queryKey: ["site", siteId],
@@ -89,6 +93,15 @@ export default function AdminSiteEditor() {
     onError: () => toast.error("Güncellenemedi"),
   });
 
+  const reorderSlots = useMutation({
+    mutationFn: (ids: string[]) => apiPost<AdSlot[]>(`/sites/${siteId}/slots/reorder`, { ids }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["slots", siteId] });
+      toast.success("Sıralama güncellendi");
+    },
+    onError: () => toast.error("Sıralama kaydedilemedi"),
+  });
+
   const removeSlot = useMutation({
     mutationFn: (id: string) => apiDelete(`/sites/${siteId}/slots/${id}`),
     onSuccess: () => {
@@ -125,6 +138,16 @@ export default function AdminSiteEditor() {
       const target = idx + dir;
       if (target < 0 || target >= items.length) return d;
       [items[idx], items[target]] = [items[target], items[idx]];
+      return { ...d, popup: { ...d.popup, items: items.map((it, i) => ({ ...it, order: i })) } };
+    });
+
+  // Sürükle-bırak: kaynak kolonu hedef konuma taşı.
+  const reorderItems = (from: number, to: number) =>
+    setDraft((d) => {
+      if (!d) return d;
+      const items = [...d.popup.items];
+      const [moved] = items.splice(from, 1);
+      items.splice(to, 0, moved);
       return { ...d, popup: { ...d.popup, items: items.map((it, i) => ({ ...it, order: i })) } };
     });
 
@@ -182,19 +205,16 @@ export default function AdminSiteEditor() {
             <Field label="Site Adı" id="f-name">
               <Input id="f-name" value={draft.name} onChange={(e) => set("name", e.target.value)} data-testid="field-name" />
             </Field>
-            <Field label="Başlık (Hero)" id="f-title">
+            <Field label="Grid Başlığı (ziyaretçi sayfasının üst başlığı)" id="f-title">
               <Input id="f-title" value={draft.title} onChange={(e) => set("title", e.target.value)} data-testid="field-title" />
             </Field>
-            <Field label="Slogan" id="f-tagline">
+            <Field label="Alt Başlık / Slogan" id="f-tagline">
               <Input id="f-tagline" value={draft.tagline} onChange={(e) => set("tagline", e.target.value)} data-testid="field-tagline" />
             </Field>
             <Field label="Logo Metni" id="f-logo">
               <Input id="f-logo" value={draft.logo_text} onChange={(e) => set("logo_text", e.target.value)} data-testid="field-logo" />
             </Field>
-            <Field label="Hero Görsel URL" id="f-hero">
-              <Input id="f-hero" value={draft.hero_image_url} onChange={(e) => set("hero_image_url", e.target.value)} data-testid="field-hero" />
-            </Field>
-            <Field label="Kayan Yazılar (her satır bir metin)" id="f-marquee">
+            <Field label="Kayan Yazılar — üst barda logo ile durum arasında gösterilir (her satır bir metin)" id="f-marquee">
               <Textarea
                 id="f-marquee"
                 rows={3}
@@ -402,9 +422,23 @@ export default function AdminSiteEditor() {
                   {draft.popup.items.map((item, idx) => (
                     <div
                       key={item.id}
-                      className="rounded-lg border border-[#1E293B] bg-[#0B0E17] p-4"
+                      className={`rounded-lg border bg-[#0B0E17] p-4 transition-colors duration-150 ${
+                        dragItem === idx ? "border-amber-500 opacity-60" : "border-[#1E293B]"
+                      }`}
                       data-testid="popup-item-row"
+                      draggable
+                      onDragStart={() => setDragItem(idx)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragItem !== null && dragItem !== idx) reorderItems(dragItem, idx);
+                        setDragItem(null);
+                      }}
+                      onDragEnd={() => setDragItem(null)}
                     >
+                      <div className="mb-3 flex cursor-grab items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 active:cursor-grabbing">
+                        <GripVertical className="h-3.5 w-3.5" /> Sürükleyerek sırala · {idx + 1}. kolon
+                      </div>
                       <div className="grid gap-3 md:grid-cols-4">
                         <Field label="Marka Adı" id={`pi-b-${item.id}`}>
                           <Input
@@ -414,12 +448,11 @@ export default function AdminSiteEditor() {
                             data-testid="popup-item-brand-input"
                           />
                         </Field>
-                        <Field label="Logo URL (ops.)" id={`pi-l-${item.id}`}>
-                          <Input
-                            id={`pi-l-${item.id}`}
+                        <Field label="Logo (dosya yükle)" id={`pi-l-${item.id}`}>
+                          <LogoUpload
                             value={item.logo_url}
-                            onChange={(e) => patchItem(idx, { logo_url: e.target.value })}
-                            data-testid="popup-item-logo-input"
+                            onChange={(url) => patchItem(idx, { logo_url: url })}
+                            testId="popup-item-logo"
                           />
                         </Field>
                         <Field label="1. Satır" id={`pi-1-${item.id}`}>
@@ -531,6 +564,12 @@ export default function AdminSiteEditor() {
             ))}
           </div>
 
+          {list.length > 1 ? (
+            <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-500">
+              <GripVertical className="h-3.5 w-3.5" /> Kartları sürükleyip bırakarak sırayı değiştirebilirsiniz.
+            </p>
+          ) : null}
+
           {list.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[#1E293B] p-10 text-center text-sm text-slate-400" data-testid="slots-empty-state">
               Bu site için henüz reklam alanı yok.
@@ -538,21 +577,71 @@ export default function AdminSiteEditor() {
           ) : (
             <div className="space-y-4" data-testid="slots-list">
               {list.map((slot, idx) => (
-                <div key={slot.id} className="rounded-xl border border-[#1E293B] bg-[#121620] p-5" data-testid="slot-editor-card">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-[#1E293B] px-2 py-0.5 text-[11px] font-bold tracking-widest text-amber-400">
+                <div
+                  key={slot.id}
+                  className={`rounded-lg border bg-[#121620] px-4 py-3 transition-colors duration-150 ${
+                    dragSlot === idx ? "border-amber-500 opacity-60" : "border-[#1E293B]"
+                  }`}
+                  data-testid="slot-editor-card"
+                  draggable
+                  onDragStart={() => setDragSlot(idx)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragSlot !== null && dragSlot !== idx) {
+                      const ids = list.map((s) => s.id);
+                      const [moved] = ids.splice(dragSlot, 1);
+                      ids.splice(idx, 0, moved);
+                      reorderSlots.mutate(ids);
+                    }
+                    setDragSlot(null);
+                  }}
+                  onDragEnd={() => setDragSlot(null)}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="flex cursor-grab items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 active:cursor-grabbing">
+                        <GripVertical className="h-3.5 w-3.5" /> {idx + 1}
+                      </span>
+                      {slot.image_url ? (
+                        <img src={slot.image_url} alt="" className="h-5 w-10 shrink-0 object-contain" />
+                      ) : null}
+                      <span className="truncate font-heading text-sm font-bold tracking-tight" data-testid="slot-summary-title">
+                        {slot.title || "(başlıksız)"}
+                      </span>
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+                        style={{ background: slot.border_color }}
+                        aria-hidden
+                      />
+                      <span className="hidden rounded bg-[#1E293B] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-amber-400 sm:inline">
                         {AD_TYPE_LABELS[slot.type]}
                       </span>
-                      <span className="font-mono text-xs text-slate-500">{slot.clicks} tıklama</span>
+                      <span className="hidden font-mono text-[10px] text-slate-500 md:inline">
+                        {slot.col_span} kolon · {slot.clicks} tıklama · {slot.active ? "yayında" : "pasif"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
+                      <button
+                        className="flex items-center gap-1 rounded border border-[#1E293B] px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-300 transition-colors duration-150 hover:border-amber-500/60 hover:text-amber-400"
+                        data-testid="slot-edit-toggle"
+                        aria-expanded={openSlot === slot.id}
+                        onClick={() => setOpenSlot(openSlot === slot.id ? null : slot.id)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        {openSlot === slot.id ? "Kapat" : "Düzenle"}
+                      </button>
                       <button
                         className="rounded border border-[#1E293B] p-1.5 text-slate-400 hover:text-slate-100"
                         aria-label="Yukarı taşı"
                         data-testid="slot-move-up-button"
                         disabled={idx === 0}
-                        onClick={() => updateSlot.mutate({ id: slot.id, patch: { order: Math.max(0, slot.order - 1) } })}
+                        onClick={() => {
+                          const ids = list.map((s) => s.id);
+                          if (idx === 0) return;
+                          [ids[idx - 1], ids[idx]] = [ids[idx], ids[idx - 1]];
+                          reorderSlots.mutate(ids);
+                        }}
                       >
                         <ChevronUp className="h-3.5 w-3.5" />
                       </button>
@@ -560,7 +649,13 @@ export default function AdminSiteEditor() {
                         className="rounded border border-[#1E293B] p-1.5 text-slate-400 hover:text-slate-100"
                         aria-label="Aşağı taşı"
                         data-testid="slot-move-down-button"
-                        onClick={() => updateSlot.mutate({ id: slot.id, patch: { order: slot.order + 1 } })}
+                        disabled={idx === list.length - 1}
+                        onClick={() => {
+                          const ids = list.map((s) => s.id);
+                          if (idx >= ids.length - 1) return;
+                          [ids[idx], ids[idx + 1]] = [ids[idx + 1], ids[idx]];
+                          reorderSlots.mutate(ids);
+                        }}
                       >
                         <ChevronDown className="h-3.5 w-3.5" />
                       </button>
@@ -575,7 +670,7 @@ export default function AdminSiteEditor() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className={`${openSlot === slot.id ? "mt-4 grid" : "hidden"} gap-4 md:grid-cols-2`} data-testid="slot-detail-panel">
                     <Field label="Başlık" id={`s-title-${slot.id}`}>
                       <Input
                         id={`s-title-${slot.id}`}
@@ -607,12 +702,11 @@ export default function AdminSiteEditor() {
                       </div>
                     ) : (
                       <>
-                        <Field label="Görsel URL" id={`s-img-${slot.id}`}>
-                          <Input
-                            id={`s-img-${slot.id}`}
-                            defaultValue={slot.image_url}
-                            onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { image_url: e.target.value } })}
-                            data-testid="slot-image-input"
+                        <Field label="Marka Logosu (dosya yükle)" id={`s-img-${slot.id}`}>
+                          <LogoUpload
+                            value={slot.image_url}
+                            onChange={(url) => updateSlot.mutate({ id: slot.id, patch: { image_url: url } })}
+                            testId="slot-logo"
                           />
                         </Field>
                         <Field label="Hedef Link" id={`s-url-${slot.id}`}>
@@ -680,14 +774,16 @@ export default function AdminSiteEditor() {
                     </Field>
                   </div>
 
-                  <label className="mt-4 flex items-center gap-3 text-sm">
-                    <Checkbox
-                      checked={slot.active}
-                      onCheckedChange={(v) => updateSlot.mutate({ id: slot.id, patch: { active: Boolean(v) } })}
-                      data-testid="slot-active-checkbox"
-                    />
-                    Yayında
-                  </label>
+                  {openSlot === slot.id ? (
+                    <label className="mt-4 flex items-center gap-3 text-sm">
+                      <Checkbox
+                        checked={slot.active}
+                        onCheckedChange={(v) => updateSlot.mutate({ id: slot.id, patch: { active: Boolean(v) } })}
+                        data-testid="slot-active-checkbox"
+                      />
+                      Yayında
+                    </label>
+                  ) : null}
                 </div>
               ))}
             </div>
