@@ -1,0 +1,214 @@
+{
+  "theme": "dark",
+  "project_title": "OmniAds Portal & Backoffice — Multi-Domain Dynamic Ad Platform",
+  "archetype": "ARCHETYPE 7: ELECTRIC & HIGH-CONTRAST NEON / TACTICAL AD PORTAL (Tuna40 & Deniz23 Inspiration)",
+  "language": "tr",
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#090B10",
+        "on_bg": "#F1F5F9",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "link": "#38BDF8",
+          "error": "#F87171",
+          "success": "#4ADE80",
+          "warning": "#FBBF24"
+        }
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#121620",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "link": "#38BDF8",
+          "border": "#1E293B",
+          "highlight": "#FFB800"
+        }
+      },
+      {
+        "name": "card_ad_slot",
+        "kind": "solid",
+        "bg": "#181E2C",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#CBD5E1",
+        "roles": {
+          "badge": "#FFB800",
+          "badge_text": "#000000"
+        }
+      },
+      {
+        "name": "hero",
+        "kind": "image",
+        "contrast_against": "#0B0E17",
+        "guarantee": "scrim: linear-gradient(180deg, rgba(9,11,16,0.75) 0%, rgba(9,11,16,0.92) 80%, #090B10 100%)",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#E2E8F0",
+        "roles": {
+          "link": "#FBBF24",
+          "tagline": "#38BDF8"
+        }
+      },
+      {
+        "name": "popup_modal",
+        "kind": "solid",
+        "bg": "#0F131D",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#CBD5E1",
+        "roles": {
+          "glow_border": "#F59E0B",
+          "cta_bg": "#F59E0B",
+          "cta_text": "#000000"
+        }
+      },
+      {
+        "name": "admin_sidebar",
+        "kind": "solid",
+        "bg": "#0B0E17",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "active_bg": "#1E293B",
+          "active_text": "#F59E0B"
+        }
+      },
+      {
+        "name": "badge_gold",
+        "kind": "solid",
+        "bg": "#FFB800",
+        "on_bg": "#000000",
+        "on_bg_muted": "#1E293B"
+      },
+      {
+        "name": "badge_neon_cyan",
+        "kind": "solid",
+        "bg": "#06B6D4",
+        "on_bg": "#000000",
+        "on_bg_muted": "#083344"
+      }
+    ],
+    "accent": "#F59E0B",
+    "on_accent": "#000000",
+    "accent_secondary": "#06B6D4",
+    "on_accent_secondary": "#000000"
+  },
+  "typography": {
+    "font_heading": "'Space Grotesk Variable', sans-serif",
+    "font_sans": "'DM Sans Variable', sans-serif",
+    "font_mono": "'JetBrains Mono Variable', monospace",
+    "scale_px": {
+      "display": 56,
+      "h1": 44,
+      "h2": 32,
+      "h3": 22,
+      "body": 16,
+      "caption": 14
+    },
+    "letter_spacing": {
+      "display": "tracking-tight",
+      "heading": "tracking-tight",
+      "badge": "tracking-widest uppercase",
+      "body": "tracking-normal"
+    }
+  },
+  "entry_surfaces": {
+    "/": "split hero with live dynamic domain banner grid (tuna40 style layout) + deniz23 pop-up trigger + top marquee ticker",
+    "/admin/login": "branded split login with security badge & credentials helper on dark glowing cyber panel",
+    "/admin": "high-density tactical multi-domain control backoffice with domain switcher, site theme editor, and ad slot manager",
+    "/admin/sites": "grid view of connected domains, DNS/Cloudflare instructions, SSL status, and site-level styling controls",
+    "/admin/ads": "drag-and-drop column grid ad slot manager with live device preview (mobile/tablet/desktop)"
+  },
+  "component_paths": {
+    "public_portal_page": "/app/frontend/src/pages/PublicPortal.tsx",
+    "admin_login_page": "/app/frontend/src/pages/AdminLogin.tsx",
+    "admin_dashboard_page": "/app/frontend/src/pages/AdminDashboard.tsx",
+    "admin_sites_page": "/app/frontend/src/pages/AdminSites.tsx",
+    "admin_ad_slots_page": "/app/frontend/src/pages/AdminAdSlots.tsx",
+    "admin_cloudflare_guide": "/app/frontend/src/pages/AdminCloudflare.tsx",
+    "popup_welcome_modal": "/app/frontend/src/components/portal/WelcomePopupModal.tsx",
+    "marquee_ticker": "/app/frontend/src/components/portal/MarqueeTicker.tsx",
+    "ad_slot_renderer": "/app/frontend/src/components/portal/AdSlotRenderer.tsx",
+    "domain_switch_bar": "/app/frontend/src/components/portal/DomainSwitchBar.tsx",
+    "live_site_preview": "/app/frontend/src/components/admin/LiveSitePreview.tsx"
+  },
+  "image_urls": {
+    "neon_jackpot_banner": {
+      "url": "https://images.unsplash.com/photo-1511965897574-f6fc86cf3474?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwzfHxuZW9uJTIwY2FzaW5vJTIwZ2FtaW5nJTIwamFja3BvdCUyMGJhbm5lcnxlbnwwfHx8fDE3ODkxNDc0MzZ8MA&ixlib=rb-4.1.0&q=85",
+      "category": "hero_background",
+      "description": "Red neon Casino LED signage for dynamic high-contrast ad hero banner"
+    },
+    "slot_machine_retro": {
+      "url": "https://images.unsplash.com/photo-1604028296525-8304e1a4969f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwyfHxuZW9uJTIwY2FzaW5vJTIwZ2FtaW5nJTIwamFja3BvdCUyMGJhbm5lcnxlbnwwfHx8fDE3ODkxNDc0MzZ8MA&ixlib=rb-4.1.0&q=85",
+      "category": "ad_slot_banner",
+      "description": "Vibrant arcade jackpot machine for promotional casino banner"
+    },
+    "casino_table_roulette": {
+      "url": "https://images.unsplash.com/photo-1627831389670-d20f5a01c536?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBjeWJlciUyMGNhc2lubyUyMHJvdWxldHRlJTIwc2xvdHxlbnwwfHx8fDE3ODkxNDc0MzZ8MA&ixlib=rb-4.1.0&q=85",
+      "category": "popup_promo_image",
+      "description": "Roulette table visual for deniz23 style welcome pop-up bonus modal"
+    },
+    "stadium_night_lights": {
+      "url": "https://images.unsplash.com/photo-1522778119026-d647f0596c20?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjBiZXR0aW5nJTIwc3RhZGl1bSUyMHN0YWRpdW0lMjBsaWdodHxlbnwwfHx8fDE3ODkxNDc0Mzd8MA&ixlib=rb-4.1.0&q=85",
+      "category": "sports_ad_banner",
+      "description": "Illuminated football stadium for sports betting and live odds ad slots"
+    },
+    "stadium_crowd_atmosphere": {
+      "url": "https://images.unsplash.com/photo-1599158150601-1417ebbaafdd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwzfHxzcG9ydHMlMjBiZXR0aW5nJTIwc3RhZGl1bSUyMHN0YWRpdW0lMjBsaWdodHxlbnwwfHx8fDE3ODkxNDc0Mzd8MA&ixlib=rb-4.1.0&q=85",
+      "category": "live_match_banner",
+      "description": "Match stadium energy banner for VIP tournament promo slot"
+    }
+  },
+  "grids_and_layouts": {
+    "public_ad_grid": {
+      "mode": "Dynamic Columns (Configurable 1 to 6 columns per site or per section)",
+      "desktop": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6",
+      "asymmetry_support": "Slots can span col-span-1, col-span-2, or col-span-full with distinct heights (compact, standard, billboard, leaderboard, skyscraper)",
+      "container_padding": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    },
+    "admin_dashboard_grid": {
+      "mode": "Tactical Multi-Widget",
+      "desktop": "grid grid-cols-1 lg:grid-cols-12 gap-6",
+      "sidebar": "w-64 shrink-0 bg-[#0B0E17] border-r border-[#1E293B]",
+      "main_area": "flex-1 p-6 md:p-8 bg-[#090B10] min-h-screen"
+    }
+  },
+  "motion_and_interactions": {
+    "transitions": "transition-all duration-200 ease-out",
+    "ad_card_hover": "hover:-translate-y-1 hover:shadow-[0_10px_25px_-5px_rgba(245,158,11,0.2)] hover:border-[#F59E0B]/60",
+    "popup_animation": "animate-in fade-in zoom-in-95 duration-300",
+    "marquee_speed": "smooth continuous CSS linear scroll 25s",
+    "reduced_motion": "respects prefers-reduced-motion with instant opacity fallback"
+  },
+  "accessibility": {
+    "contrast_standard": "WCAG 2.2 AA compliant (minimum 4.5:1 text on dark surface, 3:1 on large text)",
+    "aria_roles": "dialog role on popup modal, region on ad slot zones, status on live domain indicators",
+    "keyboard_nav": "all clickable ad banners and admin controls reachable via Tab, Esc closes popup modal",
+    "test_attributes": "data-testid attributes on all domain switcher items, ad cards, pop-up CTAs, admin forms, and action buttons"
+  },
+  "visual_enhancers": {
+    "subtle_noise": "background-image: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.08) 0%, transparent 60%)",
+    "glowing_borders": "border border-amber-500/20 hover:border-amber-500/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]",
+    "status_pulses": "relative flex h-2.5 w-2.5 before:animate-ping before:absolute before:inline-flex before:h-full before:w-full before:rounded-full before:bg-emerald-400 before:opacity-75 after:relative after:inline-flex after:rounded-full after:h-2.5 after:w-2.5 after:bg-emerald-500"
+  },
+  "instructions_to_main_agent": {
+    "key_architectural_points": [
+      "1. MULTI-DOMAIN ROUTING & PREVIEW: The public portal inspects the current window.location.hostname OR query param ?site=slug (e.g. ?site=tuna40 or ?site=deniz23). It dynamically fetches the configuration, ad slots, and theme for that active domain.",
+      "2. BACKOFFICE DOMAIN & AD MANAGEMENT: A single centralized admin backoffice (/admin) manages unlimited domains. For each domain: configure title, logo, header text, marquee news, primary/accent colors, custom CSS, layout column count (1-6), enable/disable welcome pop-up modal, and pop-up content (title, promo image, countdown, CTA button, redirect URL).",
+      "3. AD SLOT TYPES & FULL CUSTOMIZATION: Supports (a) Image Banner + Link with custom badge/ribbon (b) Raw HTML / Embed iframe code (c) Rich CTA Text Card with glowing buttons. Each ad slot has: title, category tag, column span (1 to full), row order, status (active/inactive), click tracking counter, and target URL.",
+      "4. TUNA40 & DENIZ23 VISUAL BLEND: tuna40 high-impact dark betting portal layout with top jackpot banner, dynamic grid slots, sponsor badges, combined with deniz23 high-converting animated welcome pop-up modal on entry with countdown timer and VIP claim CTA.",
+      "5. CLOUDFLARE & SERVER INTEGRATION GUIDE: Provide a dedicated Backoffice page with interactive DNS setup instructions, CNAME/A-Record generator, Cloudflare SSL/Proxy settings, and Nginx/Custom Domain routing checklist for connecting new domains seamlessly.",
+      "6. DATA PERSISTENCE & SEED DATA: Pre-seed MongoDB with sample sites ('tuna40-portal', 'deniz23-bet', 'vip-bonus-merkezi') and 10+ realistic ad slots with high-contrast visuals, responsive preview toggle, and instant live preview iframe/switcher.",
+      "7. TURKISH LANGUAGE UI: Public portal and Admin backoffice must be in clear, high-fidelity Turkish with terms like 'Domain Yönetimi', 'Reklam Alanları', 'Karşılama Pop-up', 'Canlı Önizleme', 'Tıklama İstatistikleri'."
+    ]
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": {
+    "anti_ai_slop": "Do not make generic centered layouts. Use high visual contrast, electric amber (#F59E0B) and cyan (#06B6D4) against deep obsidian (#090B10).",
+    "glass_and_borders": "Use 1px crisp borders (#1E293B) and subtle glass panels (bg-[#121620]/90 backdrop-blur-md) with ambient neon glows.",
+    "testing_ids": "Ensure every critical element has data-testid (e.g. data-testid='site-switch-select', data-testid='popup-modal-cta', data-testid='admin-save-site-btn', data-testid='ad-card-item').",
+    "toast_notifications": "Use sonner for success/error feedback on domain additions, ad slot updates, and theme changes."
+  }
+}
