@@ -69,6 +69,14 @@ Tek admin rolü. Kullanıcı `admins` koleksiyonunda salt+sha256 ile saklanır; 
 `{url: "/api/uploads/<id>"}` döner; `GET /api/uploads/{id}` public olarak servis eder.
 PNG/JPG/WEBP/GIF/SVG, en fazla 2 MB.
 
+## Sponsor içe aktarma (deniz25.com)
+`cd /app/backend && python import_deniz25.py` — deniz25.com pop-up sponsorlarının marka
+adı, affiliate linki ve bonus satırlarını Marco sitesine yazar. Logolar **hotlink edilmez**:
+ham kaynak yollarından (`/logos/*.webp`, `/api/media/...`) indirilip `uploads` koleksiyonuna
+kaydedilir ve `/api/uploads/<id>` olarak servis edilir. `/_next/image` optimizasyon servisi
+0 byte dönebildiği için ham yollar kullanılır; 200 byte altı yanıtlar atlanır (script idempotent).
+8 pop-up kolonu + 10 reklam kartı (STAKE ve BETMANİ sadece kart olarak).
+
 ## Şablon kopyalama
 `POST /api/sites/{id}/duplicate` {slug, name, domains} → tema, pop-up kolonları ve tüm
 reklam kartları yeni siteye kopyalanır (tıklama sayaçları sıfırlanır).
