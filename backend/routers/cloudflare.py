@@ -131,8 +131,28 @@ async def call(method: str, path: str, **kwargs) -> dict:
     try:
         return await cf_request(method, path, **kwargs)
     except CloudflareError as exc:
+        # Cloudflare izin hatalarını (kod 10000 / 1105) uygulanabilir mesaja çevir.
+        codes = {e.get("code") for e in exc.errors if isinstance(e, dict)}
+        text = str(exc)
+        if "purge_cache" in path and (10000 in codes or "Authentication error" in text):
+            detail = (
+                "Önbellek temizlenemedi: API token'ında 'Zone → Cache Purge → Purge' izni yok. "
+                "Cloudflare > My Profile > API Tokens > token'ı düzenle → bu izni ekle."
+            )
+        elif "zone.create" in text or (path == "/zones" and method == "POST"):
+            detail = (
+                "Zone oluşturulamadı: token'a 'Account → Zone → Edit' izni gerekir. "
+                f"Cloudflare mesajı: {text}"
+            )
+        elif 10000 in codes or "Authentication error" in text:
+            detail = (
+                "Cloudflare kimlik doğrulama hatası: token geçersiz ya da bu işlem için "
+                f"gerekli izne sahip değil. ({text})"
+            )
+        else:
+            detail = f"Cloudflare: {text}"
         # 400 kullanılır: 502 ingress tarafından kendi hata sayfasıyla değiştiriliyor.
-        raise HTTPException(status_code=400, detail=f"Cloudflare: {exc}")
+        raise HTTPException(status_code=400, detail=detail)
 
 
 def to_zone(z: dict) -> CfZone:

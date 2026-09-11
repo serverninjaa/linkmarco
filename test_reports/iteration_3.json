@@ -1,0 +1,75 @@
+{
+  "iteration": 3,
+  "summary": "Retest of Cloudflare permission-error-message bug fix: 6/6 acceptance criteria exercised, 19/19 backend pytest cases passed (4 new + 15 pre-existing), 4/4 browser checks passed (1 new + 3 re-run persisted).",
+  "passed": 8,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "BUG FIX: purge-cache permission error is actionable (400, not bare auth error)",
+      "name": "test_tscheck_cf_error_messages.py::test_purge_cache_permission_error_is_actionable",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/cloudflare/zones/e2933ef25eec2b393f57c2af845376e4/purge-cache -> 400; detail: 'Onbellek temizlenemedi: API token'\\u0131nda 'Zone \\u2192 Cache Purge \\u2192 Purge' izni yok. Cloudflare > My Profile > API Tokens > token'\\u0131 duzenle -> bu izni ekle.' (contains 'Zone', 'Cache Purge', instructions; not the bare 'Cloudflare: Authentication error')."
+    },
+    {
+      "criterion": "BUG FIX: purge-cache actionable message surfaces in UI toast",
+      "name": "cloudflare-purge-cache-actionable-toast",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Logged in admin/admin123, opened /admin/cloudflare, selected sultan5.com zone in cf-ssl-zone-select, clicked cf-purge-cache-button; a sonner toast appeared containing 'Cache Purge' text (not the bare auth-error string). Backend call returned 400 as expected (console shows one 400 XHR)."
+    },
+    {
+      "criterion": "Zone create permission error also actionable",
+      "name": "test_tscheck_cf_error_messages.py::test_zone_create_permission_error_is_actionable",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/cloudflare/zones {name: tscheck-<uuid>.example.com} -> 400; detail contains 'Account', 'Zone', and 'Edit' (mentions required 'Account -> Zone -> Edit' permission); not the bare auth-error string."
+    },
+    {
+      "criterion": "Working Cloudflare endpoints unaffected",
+      "name": "test_tscheck_cf_error_messages.py::test_working_cloudflare_endpoints_unaffected",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/cloudflare/status -> 200 {token_valid: true, account_name: set}; GET /api/cloudflare/zones -> 200 list containing 'marcopanel.site' and 'sultan5.com'; GET /api/cloudflare/verify-domains -> 200 list."
+    },
+    {
+      "criterion": "autowire still works with existing conflicting CNAME/A records",
+      "name": "test_tscheck_autowire_www_conflict.py::test_autowire_survives_existing_www_cname_conflict",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "Re-ran pre-existing suite: planted CNAME www.sultan5.com -> tscheck-conflict.example.com, then POST /api/cloudflare/autowire {domain: sultan5.com} -> 200; records for sultan5.com and www.sultan5.com both A/203.161.57.207/proxied=true; no duplicate leftover record afterward."
+    },
+    {
+      "criterion": "SSL settings panel read/write",
+      "name": "test_tscheck_cf_error_messages.py::test_ssl_settings_read_and_write_roundtrip",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/cloudflare/zones/e2933ef25eec2b393f57c2af845376e4/ssl -> 200; PUT {always_use_https: true} -> 200 {always_use_https: true}; follow-up GET confirms true; restored to original value in a finally block to avoid leaving mutated zone state."
+    },
+    {
+      "criterion": "Host routing and admin panel unaffected (redirect to login, credentials work, lists render)",
+      "name": "admin-login-protects-routes",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Re-ran persisted check: /admin without session shows admin-login-form; login admin/admin123 -> 'Siteler & Domainler' heading visible."
+    },
+    {
+      "criterion": "Host routing / Cloudflare panel renders live data on preview host",
+      "name": "root-panel-redirect-and-preview-portal",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Re-ran persisted check: '/' on preview host shows admin-login-form ('Yonetim Girisi'); '/?site=marco' shows visitor portal popup, confirming host-routing logic still intact after the Cloudflare error-message fix."
+    }
+  ],
+  "notes": [
+    "Backend probe (curl localhost:8001/api) returned 200 before testing began; full pytest suite: 19 passed (4 new in test_tscheck_cf_error_messages.py + 15 pre-existing).",
+    "Re-ran (by name only, no script resend) 3 pre-existing browser checks per retest-mode rule: cloudflare-panel-renders-live-data, admin-login-protects-routes, root-panel-redirect-and-preview-portal — all passed, confirming GET /api/cloudflare/zones and /verify-domains render correctly and admin/host routing is unaffected.",
+    "New browser check cloudflare-purge-cache-actionable-toast added for the UI-facing half of the purge-cache criterion (backend test covers the API half). No new browser check needed for zone-create or SSL panel per se: zone-create has no dedicated 'create zone' UI button exercised by the briefing, and the SSL read/write criterion is pure API behavior already covered by the backend test — the SSL panel widgets (zone select, mode select, https toggle) are visually confirmed present in the cloudflare-panel-renders-live-data screenshot.",
+    "Console noise carried over from iteration 2: a React 'duplicate key sultan5.com' warning on the Cloudflare panel, caused by residue from repeated tscheck-autowire-* fixture sites created across test iterations (my own test-fixture namespace, not seeded/production data). Not filed as a new bug — same root cause already noted previously, does not break rendering, and is outside this iteration's 6 acceptance criteria.",
+    "spec_deviations honored: marcopanel.site zone was never mutated; all writes (purge-cache 400 attempt, SSL toggle, autowire) targeted sultan5.com only. SSL toggle was restored to its original value after the test.",
+    "6/6 briefing acceptance criteria exercised (matrix within the 8-criterion cap); some criteria mapped to 2 artifacts (backend+browser) where both an API contract and a UI surface existed."
+  ]
+}
