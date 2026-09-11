@@ -126,3 +126,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - GET|PUT /api/cloudflare/zones/{id}/ssl: ssl modu (off/flexible/full/strict) + always_use_https
 - POST /api/cloudflare/autowire artik opsiyonel site_id alir: domain secilen sitenin domains listesine eklenir
 - UI: frontend/src/components/admin/CloudflarePanels.tsx (DomainVerifyPanel, ZoneSslPanel)
+
+### Onbellek & domain silme
+- settings.auto_purge (varsayilan true): PUT /api/cloudflare/auto-purge ile degisir
+- PUT /api/sites/{id} sonrasi routers.cloudflare.purge_site_cache(site_id) fire-and-forget calisir (sitenin domainlerine ait zone onbellegi)
+- POST /api/cloudflare/remove-domain {site_id, domain, delete_dns}: domaini siteden ceker, delete_dns ise kok+www A/CNAME kayitlarini Cloudflare dan siler, sonuc warning alani ile doner

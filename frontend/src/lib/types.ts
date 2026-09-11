@@ -229,7 +229,15 @@ export interface CfStatus {
   account_id?: string | null;
   account_name?: string | null;
   server_ip: string;
+  auto_purge: boolean;
   message?: string | null;
+}
+
+export interface CfDomainRemoveResult {
+  domain: string;
+  removed_from_site: boolean;
+  deleted_records: string[];
+  warning?: string | null;
 }
 
 export interface CfZone {

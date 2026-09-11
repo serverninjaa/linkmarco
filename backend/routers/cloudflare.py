@@ -26,6 +26,7 @@ class CfStatus(BaseModel):
     account_id: Optional[str] = None
     account_name: Optional[str] = None
     server_ip: str = ""
+    auto_purge: bool = True
     message: Optional[str] = None
 
 
@@ -96,6 +97,23 @@ class CfSslUpdate(BaseModel):
     always_use_https: Optional[bool] = None
 
 
+class CfAutoPurgeUpdate(BaseModel):
+    auto_purge: bool
+
+
+class CfDomainRemoveRequest(BaseModel):
+    site_id: str
+    domain: str
+    delete_dns: bool = False
+
+
+class CfDomainRemoveResult(BaseModel):
+    domain: str
+    removed_from_site: bool
+    deleted_records: List[str] = []
+    warning: Optional[str] = None
+
+
 class CfAutowireResult(BaseModel):
     zone: CfZone
     records: List[CfRecord]
@@ -149,18 +167,24 @@ async def first_account_id() -> Optional[str]:
 async def status():
     settings = await get_settings()
     server_ip = settings.get("server_ip", "")
+    auto_purge = bool(settings.get("auto_purge", True))
     if not token():
         return CfStatus(
             configured=False,
             token_valid=False,
             server_ip=server_ip,
+            auto_purge=auto_purge,
             message="CLOUDFLARE_API_TOKEN backend/.env içinde tanımlı değil",
         )
     try:
         verify = await cf_request("GET", "/user/tokens/verify")
     except CloudflareError as exc:
         return CfStatus(
-            configured=True, token_valid=False, server_ip=server_ip, message=str(exc)
+            configured=True,
+            token_valid=False,
+            server_ip=server_ip,
+            auto_purge=auto_purge,
+            message=str(exc),
         )
     account_id = settings.get("account_id")
     account_name = settings.get("account_name")
@@ -185,6 +209,7 @@ async def status():
         account_id=account_id,
         account_name=account_name,
         server_ip=server_ip,
+        auto_purge=auto_purge,
     )
 
 
@@ -287,6 +312,77 @@ async def autowire(payload: CfAutowireRequest):
     zone = to_zone(fresh["result"])
     return CfAutowireResult(
         zone=zone, records=out, created_zone=created_zone, name_servers=zone.name_servers
+    )
+
+
+@router.put("/auto-purge", response_model=CfStatus)
+async def set_auto_purge(payload: CfAutoPurgeUpdate):
+    await db.settings.update_one(
+        {"id": SETTINGS_ID}, {"$set": {"auto_purge": payload.auto_purge}}, upsert=True
+    )
+    return await status()
+
+
+async def purge_site_cache(site_id: str) -> List[str]:
+    """Sitenin domainlerine ait zone'ların önbelleğini boşaltır (best-effort)."""
+    settings = await get_settings()
+    if not token() or not settings.get("auto_purge", True):
+        return []
+    site = await db.sites.find_one({"id": site_id})
+    domains = [str(d).lower().removeprefix("www.") for d in (site or {}).get("domains") or []]
+    if not domains:
+        return []
+    purged: List[str] = []
+    try:
+        body = await cf_request("GET", "/zones", params={"page": 1, "per_page": 200})
+        zones = {z["name"]: z["id"] for z in body.get("result") or []}
+        for domain in domains:
+            zone_id = zones.get(domain)
+            if not zone_id:
+                continue
+            await cf_request(
+                "POST", f"/zones/{zone_id}/purge_cache", json={"purge_everything": True}
+            )
+            purged.append(domain)
+    except CloudflareError:
+        return purged  # önbellek temizliği kaydı engellememeli
+    return purged
+
+
+@router.post("/remove-domain", response_model=CfDomainRemoveResult)
+async def remove_domain(payload: CfDomainRemoveRequest):
+    """Domaini siteden kaldırır; istenirse Cloudflare'daki kök + www kayıtlarını da siler."""
+    domain = payload.domain.strip().lower().removeprefix("www.")
+    site = await db.sites.find_one({"id": payload.site_id})
+    if not site:
+        raise HTTPException(status_code=404, detail="Site bulunamadı")
+    res = await db.sites.update_one({"id": payload.site_id}, {"$pull": {"domains": domain}})
+
+    deleted: List[str] = []
+    warning: Optional[str] = None
+    if payload.delete_dns:
+        if not token():
+            warning = "Cloudflare token yok — DNS kayıtları silinemedi"
+        else:
+            try:
+                body = await cf_request("GET", "/zones", params={"name": domain, "per_page": 5})
+                zones = body.get("result") or []
+                if not zones:
+                    warning = "Cloudflare'da zone bulunamadı"
+                else:
+                    zone_id = zones[0]["id"]
+                    records = await list_records(zone_id)
+                    for r in records:
+                        if r.name in (domain, f"www.{domain}") and r.type in ("A", "CNAME"):
+                            await cf_request("DELETE", f"/zones/{zone_id}/dns_records/{r.id}")
+                            deleted.append(f"{r.type} {r.name}")
+            except CloudflareError as exc:
+                warning = f"Cloudflare: {exc}"
+    return CfDomainRemoveResult(
+        domain=domain,
+        removed_from_site=res.modified_count > 0,
+        deleted_records=deleted,
+        warning=warning,
     )
 
 

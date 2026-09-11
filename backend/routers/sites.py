@@ -102,6 +102,10 @@ async def update_site(site_id: str, payload: SiteUpdate):
     if changes:
         await db.sites.update_one({"id": site_id}, {"$set": changes})
         doc = await db.sites.find_one({"id": site_id})
+        # Tasarım kaydedildikten sonra Cloudflare önbelleğini sessizce boşalt (panelden kapatılabilir).
+        from routers.cloudflare import purge_site_cache
+
+        asyncio.create_task(purge_site_cache(site_id))
     return Site(**doc)  # type: ignore[arg-type]
 
 

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import type { CfRecord, CfRecordInput, CfStatus, CfZone, Site } from "@/lib/types";
-import AdminShell from "@/components/admin/AdminShell";
+import type { CfDomainRemoveResult, CfRecord, CfRecordInput, CfStatus, CfZone, Site } from "@/lib/types";import AdminShell from "@/components/admin/AdminShell";
 import { Cloud, Server, ShieldCheck, Copy, Plus, Trash2, RefreshCw, Zap, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { DomainVerifyPanel, ZoneSslPanel } from "@/components/admin/CloudflarePanels";
@@ -36,6 +35,7 @@ export default function AdminCloudflare() {
   const [openZone, setOpenZone] = useState<string | null>(null);
   const [autowireDomain, setAutowireDomain] = useState("");
   const [autowireSiteId, setAutowireSiteId] = useState("");
+  const [removeTarget, setRemoveTarget] = useState<{ domain: string; siteId: string; deleteDns: boolean } | null>(null);
   const [rec, setRec] = useState<CfRecordInput>({ type: "A", name: "", content: "", ttl: 1, proxied: true });
 
   const { data: sites } = useQuery({ queryKey: ["sites"], queryFn: () => apiGet<Site[]>("/sites"), retry: false });
@@ -56,11 +56,40 @@ export default function AdminCloudflare() {
     retry: false,
   });
 
-  const saveIp = useMutation({
-    mutationFn: () => apiPut<CfStatus>("/cloudflare/settings", { server_ip: serverIp }),
+  const saveIp = useMutation({    mutationFn: () => apiPut<CfStatus>("/cloudflare/settings", { server_ip: serverIp }),
     onSuccess: (s) => {
       qc.setQueryData(["cf-status"], s);
       toast.success("Sunucu IP kaydedildi");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+
+  const autoPurge = useMutation({
+    mutationFn: (value: boolean) => apiPut<CfStatus>("/cloudflare/auto-purge", { auto_purge: value }),
+    onSuccess: (s) => {
+      qc.setQueryData(["cf-status"], s);
+      toast.success(s.auto_purge ? "Otomatik önbellek temizliği açık" : "Otomatik önbellek temizliği kapalı");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+
+  const removeDomain = useMutation({
+    mutationFn: (v: { siteId: string; domain: string; deleteDns: boolean }) =>
+      apiPost<CfDomainRemoveResult>("/cloudflare/remove-domain", {
+        site_id: v.siteId,
+        domain: v.domain,
+        delete_dns: v.deleteDns,
+      }),
+    onSuccess: (r) => {
+      void qc.invalidateQueries({ queryKey: ["sites"] });
+      void qc.invalidateQueries({ queryKey: ["cf-verify-domains"] });
+      toast.success(
+        r.warning
+          ? `${r.domain} kaldırıldı — ${r.warning}`
+          : r.deleted_records.length > 0
+            ? `${r.domain} kaldırıldı, DNS kayıtları silindi: ${r.deleted_records.join(", ")}`
+            : `${r.domain} panelden kaldırıldı`,
+      );
     },
     onError: (e) => toast.error(errText(e)),
   });
@@ -75,8 +104,7 @@ export default function AdminCloudflare() {
     onError: (e) => toast.error(errText(e)),
   });
 
-  const autowire = useMutation({
-    mutationFn: (opts?: { domain?: string; siteId?: string }) =>
+  const autowire = useMutation({    mutationFn: (opts?: { domain?: string; siteId?: string }) =>
       apiPost<{ created_zone: boolean; name_servers: string[] }>("/cloudflare/autowire", {
         domain: opts?.domain ?? autowireDomain,
         site_id: (opts?.siteId ?? autowireSiteId) || null,
@@ -127,7 +155,7 @@ export default function AdminCloudflare() {
     onError: (e) => toast.error(errText(e)),
   });
 
-  const domains = (sites ?? []).flatMap((s) => s.domains.map((d) => ({ d, slug: s.slug })));
+  const domains = (sites ?? []).flatMap((s) => s.domains.map((d) => ({ d, slug: s.slug, siteId: s.id })));
   const ip = statusQ.data?.server_ip || "SUNUCU_IP_ADRESINIZ";
 
   const copy = (text: string) => {
@@ -184,6 +212,17 @@ export default function AdminCloudflare() {
               Kayıtlı IP: <code className="font-mono text-cyan-300">{statusQ.data.server_ip}</code>
             </p>
           )}
+          <button
+            className={`${ghost} mt-4`}
+            onClick={() => autoPurge.mutate(!(statusQ.data?.auto_purge ?? true))}
+            disabled={!statusQ.data || autoPurge.isPending}
+            data-testid="cf-auto-purge-toggle"
+          >
+            Tasarım kaydında önbelleği temizle:{" "}
+            <span className={statusQ.data?.auto_purge ? "text-emerald-400" : "text-slate-500"}>
+              {statusQ.data?.auto_purge ? "AÇIK" : "KAPALI"}
+            </span>
+          </button>
         </div>
 
         <div className="rounded-xl border border-[#1E293B] bg-[#121620] p-6">
@@ -416,7 +455,7 @@ export default function AdminCloudflare() {
           <p className="text-sm text-slate-400" data-testid="cf-domains-empty">Henüz bağlı domain yok.</p>
         ) : (
           <div className="space-y-2" data-testid="cf-domain-list">
-            {domains.map(({ d, slug }) => (
+            {domains.map(({ d, slug, siteId }) => (
               <div
                 key={d}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#1E293B] bg-[#0B0E17] px-4 py-2.5"
@@ -436,12 +475,67 @@ export default function AdminCloudflare() {
                   >
                     <Zap className="h-3.5 w-3.5" /> DNS yaz
                   </button>
+                  <button
+                    className={`${ghost} text-rose-400`}
+                    onClick={() => setRemoveTarget({ domain: d, siteId, deleteDns: false })}
+                    data-testid="cf-domain-remove-button"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Kaldır
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {removeTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          data-testid="cf-remove-domain-dialog"
+        >
+          <div className="w-full max-w-md rounded-xl border border-[#1E293B] bg-[#121620] p-6">
+            <h3 className="font-heading text-lg font-bold tracking-tight">Domaini kaldır</h3>
+            <p className="mt-2 text-sm text-slate-400">
+              <code className="font-mono text-cyan-300">{removeTarget.domain}</code> panelden kaldırılacak.
+              Bu domaine gelen ziyaretçiler artık bu siteyi görmez.
+            </p>
+            <label className="mt-4 flex items-start gap-2 rounded-lg border border-[#1E293B] bg-[#0B0E17] p-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                className="mt-0.5 accent-amber-500"
+                checked={removeTarget.deleteDns}
+                onChange={(e) => setRemoveTarget({ ...removeTarget, deleteDns: e.target.checked })}
+                data-testid="cf-remove-delete-dns-checkbox"
+              />
+              <span>
+                Cloudflare'daki DNS kayıtlarını da sil
+                <span className="block text-xs text-slate-500">kök ve www A/CNAME kayıtları silinir</span>
+              </span>
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button className={ghost} onClick={() => setRemoveTarget(null)} data-testid="cf-remove-cancel-button">
+                Vazgeç
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition-transform hover:scale-[1.03] disabled:opacity-50"
+                onClick={() => {
+                  removeDomain.mutate({
+                    siteId: removeTarget.siteId,
+                    domain: removeTarget.domain,
+                    deleteDns: removeTarget.deleteDns,
+                  });
+                  setRemoveTarget(null);
+                }}
+                disabled={removeDomain.isPending}
+                data-testid="cf-remove-confirm-button"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Kaldır
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminShell>
   );
 }
