@@ -25,7 +25,7 @@ gelen Host başlığına göre ilgili siteyi render eder; panelden `/?site=<slug
   - Yazı ölçekleri `TEXT_SIZE_CLASSES` (frontend/src/lib/types.ts): sm 11/9px, md 13/10px,
     lg 16/12px (mobil) — sm/md/lg masaüstünde base/xl/2xl
 
-## Ziyaretçi tasarımı (tuna40 tarzı)
+## Ziyaretçi tasarımı (Marco tarzı)
 Tek satır header: solda logo, **ortada kayan yazı (marquee, iki yanı maskeli)**, sağda
 "Güncel" durum göstergesi. Yönetim butonu ve hero bölümü yok. Ana yüzey marka kartı gridi:
 koyu plaka, neon çerçeve + köşe braketleri, ortada logo/marka adı ve iki bonus satırı.
@@ -109,3 +109,6 @@ reklam kartları yeni siteye kopyalanır (tıklama sayaçları sıfırlanır).
 ## Seed
 `cd /app/backend && python seed.py` → 3 site: marco (11 marka kartı + 8 pop-up kolonu),
 deniz23 (4 kart + 3 pop-up kolonu), vipbonus (2 kart, pop-up kapalı).
+
+## Yükleme kuralları
+Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/uploads.py).

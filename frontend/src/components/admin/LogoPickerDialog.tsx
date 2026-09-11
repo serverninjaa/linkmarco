@@ -35,7 +35,7 @@ export default function LogoPickerDialog({ value, onChange, testId = "logo-picke
       toast.success("Logo yüklendi ve kütüphaneye eklendi");
       setOpen(false);
     },
-    onError: () => toast.error("Yükleme başarısız — PNG/JPG/WEBP/SVG, en fazla 2 MB"),
+    onError: () => toast.error("Yükleme başarısız — PNG/JPG/WEBP/GIF/SVG, en fazla 10 MB"),
   });
 
   const pick = async (file: File | undefined) => {

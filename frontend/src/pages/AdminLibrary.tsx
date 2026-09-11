@@ -25,7 +25,7 @@ export default function AdminLibrary() {
       void qc.invalidateQueries({ queryKey: ["uploads"] });
       toast.success("Görsel kütüphaneye eklendi");
     },
-    onError: () => toast.error("Yükleme başarısız — PNG/JPG/WEBP/SVG, en fazla 2 MB"),
+    onError: () => toast.error("Yükleme başarısız — PNG/JPG/WEBP/GIF/SVG, en fazla 10 MB"),
   });
 
   const remove = useMutation({

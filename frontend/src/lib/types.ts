@@ -209,7 +209,7 @@ export const AD_TYPE_LABELS: Record<string, string> = {
   cta: "Metin & CTA Kartı",
 };
 
-// Neon border palette used by the tuna40-style cards and the pop-up grid.
+// Neon border palette used by the marco-style cards and the pop-up grid.
 export const NEON_COLORS = [
   "#22C55E",
   "#FACC15",

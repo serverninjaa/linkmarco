@@ -1,4 +1,4 @@
-"""Idempotent seed: demo admin + three sites with tuna40-style brand cards and columned pop-up ads.
+"""Idempotent seed: demo admin + three sites with marco-style brand cards and columned pop-up ads.
 
 Run: cd /app/backend && python seed.py
 """

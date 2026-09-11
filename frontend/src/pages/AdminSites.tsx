@@ -129,7 +129,7 @@ export default function AdminSites() {
                   id="site-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Örn. Tuna40 Portal"
+                  placeholder="Örn. Marco Portal"
                   data-testid="site-name-input"
                 />
               </div>
@@ -139,7 +139,7 @@ export default function AdminSites() {
                   id="site-slug"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="tuna40"
+                  placeholder="marco"
                   data-testid="site-slug-input"
                 />
               </div>
@@ -149,7 +149,7 @@ export default function AdminSites() {
                   id="site-domain"
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
-                  placeholder="tuna40.com"
+                  placeholder="marco.com"
                   data-testid="site-domain-input"
                 />
               </div>

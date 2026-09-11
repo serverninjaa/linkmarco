@@ -1,0 +1,107 @@
+{
+  "iteration": 1,
+  "summary": "All 8 acceptance criteria exercised: 11/11 backend pytest cases passed, 7/7 browser checks passed.",
+  "passed": 18,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "Admin login works and protects admin routes",
+      "name": "test_tscheck_admin_auth.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/login admin/admin123 -> 200 + ads_session cookie; GET /api/sites without cookie -> 401; with cookie -> 200 list; wrong password -> 401"
+    },
+    {
+      "criterion": "Admin login works and protects admin routes",
+      "name": "admin-login-protects-routes",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "/admin without session redirects to admin-login-form; login with admin/admin123 lands on 'Siteler & Domainler' heading"
+    },
+    {
+      "criterion": "No 'Tuna40'/'tuna' text anywhere in UI",
+      "name": "no-tuna-text-in-ui",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Case-insensitive body-text scan for 'tuna' returned none on /?site=marco, admin sites list, add-site dialog, library page, and site editor"
+    },
+    {
+      "criterion": "Site create / update / duplicate / set-default / delete all work",
+      "name": "test_tscheck_site_crud.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/sites -> 201; PUT /api/sites/{id} title/columns persisted on refetch; POST /set-default -> is_default true; POST /duplicate -> 201 clone; DELETE -> 200, then GET -> 404; duplicate slug create -> 409"
+    },
+    {
+      "criterion": "Site create / update / duplicate / set-default / delete all work",
+      "name": "site-create-update-duplicate-delete-ui",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Yeni Site dialog created tscheck card; editor title change persisted after reload; star button showed 'VARSAYILAN TASARIM' badge; duplicate dialog cloned site; both delete buttons removed cards. Restored marco as default afterward (hygiene) since set-default is a single global flag."
+    },
+    {
+      "criterion": "Ad slot (reklam alanı) CRUD + ordering inside site editor",
+      "name": "test_tscheck_adslot_crud.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /slots x2 -> 201; PUT slot fields (badge/text_size/effect/col_span) persisted on refetch; POST /slots/reorder reordered ids; DELETE slot -> 200 and removed from list"
+    },
+    {
+      "criterion": "Ad slot (reklam alanı) CRUD + ordering inside site editor",
+      "name": "adslot-crud-ordering-ui",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Added 2 image slots in editor; edited title/badge/target url; moved first slot down; reload confirmed new order and persisted badge/target values"
+    },
+    {
+      "criterion": "Logo upload accepts GIF up to 10MB",
+      "name": "test_tscheck_upload_gif.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/uploads with image/gif -> 200 {url}; GET url -> 200 content-type image/gif matching bytes; POST with text/plain -> 400"
+    },
+    {
+      "criterion": "Library page and logo picker dialog",
+      "name": "library-and-logo-picker-ui",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Uploaded a GIF via Kütüphane file input, item appeared in grid; opened logo picker in a fixture slot editor, selected the uploaded item, preview showed image and backend slot.image_url was non-empty"
+    },
+    {
+      "criterion": "Visitor portal renders per-domain config, popup and clicks",
+      "name": "test_tscheck_public_portal.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/public/site?slug=<tscheck> -> 200 with site+slots; POST /api/public/slots/{id}/click -> 200 {ok:true}; slot.clicks incremented to 1; unknown slug still 200 (documented fallback)"
+    },
+    {
+      "criterion": "Visitor portal renders per-domain config, popup and clicks",
+      "name": "visitor-portal-popup-and-click",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "/?site=marco shows welcome-popup-modal, closable via popup-close-button; clicking an ad card fired POST /api/public/slots/{id}/click with <300 status; /?site=deniz23 vs /?site=marco render distinct portal-logo text"
+    },
+    {
+      "criterion": "Stats & link health panel",
+      "name": "test_tscheck_stats_link_health.py",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/sites/{id}/stats?days=7 -> 200 with daily[7] + slots incl. total_clicks>=1; POST /api/sites/{id}/slots/check-links -> 200 with results for created slot"
+    },
+    {
+      "criterion": "Stats & link health panel",
+      "name": "stats-panel-renders",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "İstatistikler tab renders stats-daily-chart, stats-total-clicks showing '1', stats-slot-row; no pageerror console exceptions"
+    }
+  ],
+  "notes": [
+    "Stats endpoint lives at GET /api/sites/{site_id}/stats (admin-auth'd), not /api/stats/{site_id} as briefing text suggested; verified via the actual router and exercised accordingly.",
+    "Backend probe and frontend probe both returned 200 before testing began.",
+    "set-default is a single global flag (only one site can be default); the site-CRUD browser check restores the original seeded default (marco) at the end so other criteria/tests are unaffected."
+  ]
+}

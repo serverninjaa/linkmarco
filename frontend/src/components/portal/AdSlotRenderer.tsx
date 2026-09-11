@@ -19,7 +19,7 @@ const SPAN: Record<number, string> = {
   6: "col-span-6",
 };
 
-/** tuna40-style brand card: dark plate, neon border, corner brackets, logo + two bonus lines. */
+/** marco-style brand card: dark plate, neon border, corner brackets, logo + two bonus lines. */
 export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
   const color = slot.border_color || accent;
 

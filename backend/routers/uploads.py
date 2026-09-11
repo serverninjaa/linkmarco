@@ -16,7 +16,7 @@ from routers.auth import require_admin
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
 ALLOWED = {"image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"}
-MAX_BYTES = 2 * 1024 * 1024
+MAX_BYTES = 10 * 1024 * 1024
 
 
 class UploadResult(BaseModel):
@@ -29,7 +29,7 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Sadece PNG, JPG, WEBP, GIF veya SVG yükleyebilirsiniz")
     data = await file.read()
     if len(data) > MAX_BYTES:
-        raise HTTPException(status_code=400, detail="Dosya boyutu en fazla 2 MB olabilir")
+        raise HTTPException(status_code=400, detail="Dosya boyutu en fazla 10 MB olabilir")
     if not data:
         raise HTTPException(status_code=400, detail="Boş dosya")
     upload_id = str(uuid.uuid4())
