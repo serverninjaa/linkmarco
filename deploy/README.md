@@ -84,3 +84,5 @@ Yedek (günlük cron önerisi):
 | Reklam domaini yanlış site gösteriyor | `proxy_set_header Host $host;` satırı ve panelde domain-site eşlemesi |
 | Logo yüklenmiyor (413) | Nginx `client_max_body_size 12M` |
 | Certbot doğrulaması başarısız | Cloudflare proxy'yi geçici olarak DNS only yap |
+| `mongod` başlamıyor, `signal=ILL` / core-dump | CPU'da AVX yok → MongoDB 5.0+ çalışmaz. Docker ile 4.4: `docker run -d --name mongo44 --restart always -p 127.0.0.1:27017:27017 -v /var/lib/mongo44:/data/db mongo:4.4` |
+| `emergentintegrations` pip hatası | `deploy/requirements-prod.txt` kullan (Emergent'a özel paket üretimde gerekmez) |

@@ -20,6 +20,11 @@ fi
 npm install -g yarn >/dev/null
 
 echo "==> MongoDB deposu (Ubuntu sürümüne göre)"
+# NOT: MongoDB 5.0+ CPU'da AVX desteği ZORUNLU. AVX yoksa (lscpu | grep avx boş dönerse)
+# mongod "signal=ILL / core-dump" ile çöker. O durumda Docker ile MongoDB 4.4 kullan:
+#   apt-get install -y docker.io && systemctl enable --now docker
+#   docker run -d --name mongo44 --restart always -p 127.0.0.1:27017:27017 \
+#     -v /var/lib/mongo44:/data/db mongo:4.4
 if ! command -v mongod >/dev/null; then
   CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")"
   # noble (24.04) için MongoDB 8.0, jammy (22.04) için 7.0 yayınlanmıştır.

@@ -135,3 +135,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 ## Kendi sunucuya kurulum
 - deploy/ dizini: install.sh (Ubuntu tek komut), nginx-adcore.conf (panel domaini + default_server ile tum reklam domainleri), adcore-backend.service (uvicorn 127.0.0.1:8001), ssl.sh (certbot), update.sh, env.example, README.md
 - Panel domaini: marcopanel.site · Sunucu: 203.161.57.207 · Prod frontend: yarn build -> frontend/dist Nginx tarafindan servis edilir
+
+## Uretim ortami notlari (kendi VPS)
+- CPU AVX desteklemiyorsa MongoDB 5.0+ calismaz (signal=ILL). Cozum: Docker ile mongo:4.4 (port 127.0.0.1:27017, volume /var/lib/mongo44).
+- backend/requirements.txt icindeki emergentintegrations Emergent ozel deposunda; uretimde deploy/requirements-prod.txt kullanilir.
+- Ubuntu 24.04 (noble) icin MongoDB apt deposu 8.0 surumudur (7.0 noble icermez).
