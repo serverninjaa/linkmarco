@@ -146,3 +146,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - GET /api/public/host-role -> {host, role: panel|portal, slug, panel_domain}
 - frontend/src/components/HostGate.tsx: kok adres panelde /admin e yonlendirir, reklam domaininde PublicPortal gosterir; ?site=slug her zaman onizleme portali
 - AdminOnlyHost: /admin* rotalari reklam domainlerinde 404 ekrani gosterir (Nginx tarafinda da location /admin return 404)
+
+## Otomatik guncelleme (kendi sunucu)
+- deploy/auto-update.sh: origin/main degistiyse git reset --hard + pip + yarn build + systemctl restart; cron kurulumu: bash deploy/auto-update.sh --install (5 dk)
+- Log: /var/log/adcore-auto-update.log ; backend/.env repoda olmadigi icin korunur
+- Emergent Publish kendi barindirmasina yayinlar; kendi sunucuya akis: Save to GitHub -> cron
