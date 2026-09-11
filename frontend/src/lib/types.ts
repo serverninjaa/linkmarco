@@ -9,6 +9,18 @@ export interface Theme {
   text: string;
 }
 
+export interface PopupItem {
+  id: string;
+  brand_name: string;
+  logo_url: string;
+  line1: string;
+  line2: string;
+  url: string;
+  border_color: string;
+  col_span: number;
+  order: number;
+}
+
 export interface Popup {
   enabled: boolean;
   title: string;
@@ -17,6 +29,8 @@ export interface Popup {
   cta_text: string;
   cta_url: string;
   countdown_seconds: number;
+  columns: number;
+  items: PopupItem[];
 }
 
 export interface Site {
@@ -46,10 +60,12 @@ export interface AdSlot {
   title: string;
   badge: string;
   description: string;
+  line2: string;
   image_url: string;
   target_url: string;
   html: string;
   cta_text: string;
+  border_color: string;
   col_span: number;
   height: number;
   order: number;
@@ -70,24 +86,26 @@ export interface AdminUser {
 export const DEFAULT_THEME: Theme = {
   bg: "#090B10",
   panel: "#121620",
-  card: "#181E2C",
-  accent: "#F59E0B",
-  accent2: "#06B6D4",
+  card: "#0D1017",
+  accent: "#22C55E",
+  accent2: "#FACC15",
   text: "#F1F5F9",
 };
 
-export const DEFAULT_POPUP: Popup = {
-  enabled: true,
-  title: "HOŞ GELDİN BONUSU",
-  subtitle: "İlk üyeliğe özel %200 hoş geldin bonusu seni bekliyor.",
-  image_url: "",
-  cta_text: "BONUSU AL",
-  cta_url: "#",
-  countdown_seconds: 60,
-};
-
 export const AD_TYPE_LABELS: Record<string, string> = {
-  image: "Görsel Banner",
+  image: "Marka / Logo Kartı",
   html: "HTML / Embed",
   cta: "Metin & CTA Kartı",
 };
+
+// Neon border palette used by the tuna40-style cards and the pop-up grid.
+export const NEON_COLORS = [
+  "#22C55E",
+  "#FACC15",
+  "#F97316",
+  "#A855F7",
+  "#EF4444",
+  "#06B6D4",
+  "#EC4899",
+  "#84CC16",
+];

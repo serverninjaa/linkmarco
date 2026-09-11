@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import type { AdSlot, AdType, Site } from "@/lib/types";
-import { AD_TYPE_LABELS } from "@/lib/types";
+import type { AdSlot, AdType, PopupItem, Site } from "@/lib/types";
+import { AD_TYPE_LABELS, NEON_COLORS } from "@/lib/types";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,17 +60,18 @@ export default function AdminSiteEditor() {
       apiPost<AdSlot>(`/sites/${siteId}/slots`, {
         site_id: siteId,
         type,
-        title: "Yeni Reklam Alanı",
-        badge: "YENİ",
-        description: "Açıklama metni",
-        image_url:
-          "https://images.unsplash.com/photo-1604028296525-8304e1a4969f?crop=entropy&cs=srgb&fm=jpg&q=85&w=800",
+        title: "YENİ MARKA",
+        badge: "",
+        description: "500₺ DENEME BONUSU",
+        line2: "%30 KAYIP BONUSU",
+        image_url: "",
         target_url: "https://example.com",
         cta_text: "HEMEN AL",
-        html: '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#F59E0B">REKLAM KODU</div>',
+        html: '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#22C55E">REKLAM KODU</div>',
+        border_color: NEON_COLORS[(slots?.length ?? 0) % NEON_COLORS.length],
         col_span: 1,
-        height: 220,
-        order: (slots?.length ?? 0),
+        height: 150,
+        order: slots?.length ?? 0,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["slots", siteId] });
@@ -109,6 +110,23 @@ export default function AdminSiteEditor() {
 
   const set = <K extends keyof Site>(key: K, value: Site[K]) =>
     setDraft((d) => (d ? { ...d, [key]: value } : d));
+
+  const patchItem = (idx: number, patch: Partial<PopupItem>) =>
+    setDraft((d) => {
+      if (!d) return d;
+      const items = d.popup.items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
+      return { ...d, popup: { ...d.popup, items } };
+    });
+
+  const moveItem = (idx: number, dir: -1 | 1) =>
+    setDraft((d) => {
+      if (!d) return d;
+      const items = [...d.popup.items];
+      const target = idx + dir;
+      if (target < 0 || target >= items.length) return d;
+      [items[idx], items[target]] = [items[target], items[idx]];
+      return { ...d, popup: { ...d.popup, items: items.map((it, i) => ({ ...it, order: i })) } };
+    });
 
   const list = slots ?? [];
 
@@ -309,41 +327,191 @@ export default function AdminSiteEditor() {
 
         {/* POPUP */}
         <TabsContent value="popup" className="mt-6">
-          <div className="max-w-2xl space-y-4 rounded-xl border border-[#1E293B] bg-[#121620] p-6">
-            <label className="flex items-center gap-3 text-sm">
-              <Checkbox
-                checked={draft.popup.enabled}
-                onCheckedChange={(v) => set("popup", { ...draft.popup, enabled: Boolean(v) })}
-                data-testid="popup-enabled-checkbox"
-              />
-              Karşılama pop-up'ı aktif
-            </label>
-            <Field label="Pop-up Başlığı" id="p-title">
-              <Input id="p-title" value={draft.popup.title} onChange={(e) => set("popup", { ...draft.popup, title: e.target.value })} data-testid="popup-title-input" />
-            </Field>
-            <Field label="Alt Metin" id="p-sub">
-              <Textarea id="p-sub" rows={2} value={draft.popup.subtitle} onChange={(e) => set("popup", { ...draft.popup, subtitle: e.target.value })} data-testid="popup-subtitle-input" />
-            </Field>
-            <Field label="Görsel URL" id="p-img">
-              <Input id="p-img" value={draft.popup.image_url} onChange={(e) => set("popup", { ...draft.popup, image_url: e.target.value })} data-testid="popup-image-input" />
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Buton Metni" id="p-cta">
-                <Input id="p-cta" value={draft.popup.cta_text} onChange={(e) => set("popup", { ...draft.popup, cta_text: e.target.value })} data-testid="popup-cta-input" />
-              </Field>
-              <Field label="Buton Linki" id="p-url">
-                <Input id="p-url" value={draft.popup.cta_url} onChange={(e) => set("popup", { ...draft.popup, cta_url: e.target.value })} data-testid="popup-url-input" />
+          <div className="max-w-4xl space-y-5">
+            <div className="space-y-4 rounded-xl border border-[#1E293B] bg-[#121620] p-6">
+              <label className="flex items-center gap-3 text-sm">
+                <Checkbox
+                  checked={draft.popup.enabled}
+                  onCheckedChange={(v) => set("popup", { ...draft.popup, enabled: Boolean(v) })}
+                  data-testid="popup-enabled-checkbox"
+                />
+                Karşılama pop-up'ı aktif
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Pop-up Başlığı (boş bırakılabilir)" id="p-title">
+                  <Input
+                    id="p-title"
+                    value={draft.popup.title}
+                    onChange={(e) => set("popup", { ...draft.popup, title: e.target.value })}
+                    data-testid="popup-title-input"
+                  />
+                </Field>
+                <Field label="Pop-up Kolon Sayısı" id="p-cols">
+                  <Select
+                    value={String(draft.popup.columns)}
+                    onValueChange={(v: string) => set("popup", { ...draft.popup, columns: Number(v) })}
+                  >
+                    <SelectTrigger id="p-cols" data-testid="popup-columns-select">
+                      <SelectValue>{(v) => `${String(v)} Kolon`}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6].map((n) => (
+                        <SelectItem key={n} value={String(n)}>{n} Kolon</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+              <Field label="Alt Metin" id="p-sub">
+                <Textarea
+                  id="p-sub"
+                  rows={2}
+                  value={draft.popup.subtitle}
+                  onChange={(e) => set("popup", { ...draft.popup, subtitle: e.target.value })}
+                  data-testid="popup-subtitle-input"
+                />
               </Field>
             </div>
-            <Field label="Geri Sayım (saniye)" id="p-cd">
-              <Input
-                id="p-cd"
-                type="number"
-                value={draft.popup.countdown_seconds}
-                onChange={(e) => set("popup", { ...draft.popup, countdown_seconds: Number(e.target.value) || 0 })}
-                data-testid="popup-countdown-input"
-              />
-            </Field>
+
+            <div className="rounded-xl border border-[#1E293B] bg-[#121620] p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="font-heading text-base font-bold tracking-tight">Pop-up Reklam Kolonları</h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Her kolon ayrı bir marka kartıdır; genişlik ve neon rengi ayrı ayrı ayarlanır.
+                  </p>
+                </div>
+                <Button
+                  className="bg-amber-500 font-bold text-black hover:bg-amber-400"
+                  data-testid="add-popup-item-button"
+                  onClick={() => {
+                    const items = [...draft.popup.items, newPopupItem(draft.popup.items.length)];
+                    set("popup", { ...draft.popup, items });
+                  }}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Kolon Ekle
+                </Button>
+              </div>
+
+              {draft.popup.items.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-[#1E293B] p-8 text-center text-sm text-slate-400" data-testid="popup-items-empty">
+                  Henüz pop-up kolonu yok.
+                </p>
+              ) : (
+                <div className="space-y-3" data-testid="popup-items-list">
+                  {draft.popup.items.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-[#1E293B] bg-[#0B0E17] p-4"
+                      data-testid="popup-item-row"
+                    >
+                      <div className="grid gap-3 md:grid-cols-4">
+                        <Field label="Marka Adı" id={`pi-b-${item.id}`}>
+                          <Input
+                            id={`pi-b-${item.id}`}
+                            value={item.brand_name}
+                            onChange={(e) => patchItem(idx, { brand_name: e.target.value })}
+                            data-testid="popup-item-brand-input"
+                          />
+                        </Field>
+                        <Field label="Logo URL (ops.)" id={`pi-l-${item.id}`}>
+                          <Input
+                            id={`pi-l-${item.id}`}
+                            value={item.logo_url}
+                            onChange={(e) => patchItem(idx, { logo_url: e.target.value })}
+                            data-testid="popup-item-logo-input"
+                          />
+                        </Field>
+                        <Field label="1. Satır" id={`pi-1-${item.id}`}>
+                          <Input
+                            id={`pi-1-${item.id}`}
+                            value={item.line1}
+                            onChange={(e) => patchItem(idx, { line1: e.target.value })}
+                            data-testid="popup-item-line1-input"
+                          />
+                        </Field>
+                        <Field label="2. Satır" id={`pi-2-${item.id}`}>
+                          <Input
+                            id={`pi-2-${item.id}`}
+                            value={item.line2}
+                            onChange={(e) => patchItem(idx, { line2: e.target.value })}
+                            data-testid="popup-item-line2-input"
+                          />
+                        </Field>
+                        <Field label="Hedef Link" id={`pi-u-${item.id}`}>
+                          <Input
+                            id={`pi-u-${item.id}`}
+                            value={item.url}
+                            onChange={(e) => patchItem(idx, { url: e.target.value })}
+                            data-testid="popup-item-url-input"
+                          />
+                        </Field>
+                        <Field label="Kolon Genişliği" id={`pi-s-${item.id}`}>
+                          <Select
+                            value={String(item.col_span)}
+                            onValueChange={(v: string) => patchItem(idx, { col_span: Number(v) })}
+                          >
+                            <SelectTrigger id={`pi-s-${item.id}`} data-testid="popup-item-span-select">
+                              <SelectValue>{(v) => `${String(v)} kolon`}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1, 2, 3, 4, 5, 6].map((n) => (
+                                <SelectItem key={n} value={String(n)}>{n} kolon</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field label="Neon Renk" id={`pi-c-${item.id}`}>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id={`pi-c-${item.id}`}
+                              type="color"
+                              value={item.border_color}
+                              onChange={(e) => patchItem(idx, { border_color: e.target.value })}
+                              className="h-9 w-10 cursor-pointer rounded border border-[#1E293B] bg-transparent"
+                              data-testid="popup-item-color-input"
+                            />
+                            <code className="font-mono text-xs text-slate-400">{item.border_color}</code>
+                          </div>
+                        </Field>
+                        <div className="flex items-end gap-2">
+                          <button
+                            className="rounded border border-[#1E293B] p-2 text-slate-400 hover:text-slate-100"
+                            aria-label="Yukarı taşı"
+                            data-testid="popup-item-up-button"
+                            onClick={() => moveItem(idx, -1)}
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            className="rounded border border-[#1E293B] p-2 text-slate-400 hover:text-slate-100"
+                            aria-label="Aşağı taşı"
+                            data-testid="popup-item-down-button"
+                            onClick={() => moveItem(idx, 1)}
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            className="rounded border border-[#1E293B] p-2 text-slate-400 hover:text-red-400"
+                            aria-label="Kolonu sil"
+                            data-testid="popup-item-delete-button"
+                            onClick={() => {
+                              const items = draft.popup.items.filter((_, i) => i !== idx);
+                              set("popup", { ...draft.popup, items });
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="mt-4 text-xs text-slate-500">
+                Değişiklikler "Değişiklikleri Kaydet" ile yayına alınır.
+              </p>
+            </div>
           </div>
         </TabsContent>
 
@@ -455,17 +623,22 @@ export default function AdminSiteEditor() {
                             data-testid="slot-target-input"
                           />
                         </Field>
-                        <div className="md:col-span-2">
-                          <Field label="Açıklama" id={`s-desc-${slot.id}`}>
-                            <Textarea
-                              id={`s-desc-${slot.id}`}
-                              rows={2}
-                              defaultValue={slot.description}
-                              onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { description: e.target.value } })}
-                              data-testid="slot-description-input"
-                            />
-                          </Field>
-                        </div>
+                        <Field label="1. Satır (bonus metni)" id={`s-desc-${slot.id}`}>
+                          <Input
+                            id={`s-desc-${slot.id}`}
+                            defaultValue={slot.description}
+                            onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { description: e.target.value } })}
+                            data-testid="slot-description-input"
+                          />
+                        </Field>
+                        <Field label="2. Satır" id={`s-line2-${slot.id}`}>
+                          <Input
+                            id={`s-line2-${slot.id}`}
+                            defaultValue={slot.line2}
+                            onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { line2: e.target.value } })}
+                            data-testid="slot-line2-input"
+                          />
+                        </Field>
                       </>
                     )}
                     <Field label="Kolon Genişliği" id={`s-span-${slot.id}`}>
@@ -488,9 +661,22 @@ export default function AdminSiteEditor() {
                         id={`s-h-${slot.id}`}
                         type="number"
                         defaultValue={slot.height}
-                        onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { height: Number(e.target.value) || 200 } })}
+                        onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { height: Number(e.target.value) || 150 } })}
                         data-testid="slot-height-input"
                       />
+                    </Field>
+                    <Field label="Neon Çerçeve Rengi" id={`s-c-${slot.id}`}>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={`s-c-${slot.id}`}
+                          type="color"
+                          defaultValue={slot.border_color || "#22C55E"}
+                          onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { border_color: e.target.value } })}
+                          className="h-9 w-10 cursor-pointer rounded border border-[#1E293B] bg-transparent"
+                          data-testid="slot-color-input"
+                        />
+                        <code className="font-mono text-xs text-slate-400">{slot.border_color}</code>
+                      </div>
                     </Field>
                   </div>
 
@@ -510,6 +696,20 @@ export default function AdminSiteEditor() {
       </Tabs>
     </AdminShell>
   );
+}
+
+function newPopupItem(index: number): PopupItem {
+  return {
+    id: `tmp-${Date.now()}-${index}`,
+    brand_name: "YENİ MARKA",
+    logo_url: "",
+    line1: "500₺ DENEME BONUSU",
+    line2: "%30 KAYIP BONUSU",
+    url: "https://example.com",
+    border_color: NEON_COLORS[index % NEON_COLORS.length],
+    col_span: 1,
+    order: index,
+  };
 }
 
 function Field({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {

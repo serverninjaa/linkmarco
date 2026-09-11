@@ -24,6 +24,18 @@ class Theme(BaseModel):
     text: str = "#F1F5F9"
 
 
+class PopupItem(BaseModel):
+    id: str = Field(default_factory=_uuid)
+    brand_name: str = ""
+    logo_url: str = ""
+    line1: str = ""
+    line2: str = ""
+    url: str = ""
+    border_color: str = "#22C55E"
+    col_span: int = 1
+    order: int = 0
+
+
 class Popup(BaseModel):
     enabled: bool = True
     title: str = "HOŞ GELDİN BONUSU"
@@ -32,6 +44,8 @@ class Popup(BaseModel):
     cta_text: str = "BONUSU AL"
     cta_url: str = "#"
     countdown_seconds: int = 60
+    columns: int = 3
+    items: List[PopupItem] = Field(default_factory=list)
 
 
 class SiteBase(BaseModel):
@@ -84,12 +98,14 @@ class AdSlotBase(BaseModel):
     title: str = ""
     badge: str = ""
     description: str = ""
+    line2: str = ""
     image_url: str = ""
     target_url: str = ""
     html: str = ""
     cta_text: str = ""
+    border_color: str = "#22C55E"
     col_span: int = 1
-    height: int = 220
+    height: int = 150
     order: int = 0
     active: bool = True
 
@@ -103,10 +119,12 @@ class AdSlotUpdate(BaseModel):
     title: Optional[str] = None
     badge: Optional[str] = None
     description: Optional[str] = None
+    line2: Optional[str] = None
     image_url: Optional[str] = None
     target_url: Optional[str] = None
     html: Optional[str] = None
     cta_text: Optional[str] = None
+    border_color: Optional[str] = None
     col_span: Optional[int] = None
     height: Optional[int] = None
     order: Optional[int] = None

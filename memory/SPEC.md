@@ -7,10 +7,20 @@ gelen Host başlığına göre ilgili siteyi render eder; panelden `/?site=<slug
 
 ## Veri modeli (backend/models/schemas.py ↔ frontend/src/lib/types.ts)
 - **Site**: id, slug (unique), name, domains[], title, tagline, logo_text, hero_image_url,
-  marquee[], columns (1-6), theme{bg,panel,card,accent,accent2,text}, popup{enabled,title,
-  subtitle,image_url,cta_text,cta_url,countdown_seconds}, custom_css, active, created_at
-- **AdSlot**: id, site_id, type("image"|"html"|"cta"), title, badge, description, image_url,
-  target_url, html, cta_text, col_span, height, order, active, clicks, created_at
+  marquee[], columns (1-6), theme{bg,panel,card,accent,accent2,text}, popup, custom_css,
+  active, created_at
+- **Popup**: enabled, title, subtitle, image_url, cta_text, cta_url, countdown_seconds,
+  **columns (1-6)**, **items: PopupItem[]** — pop-up artık kolonlu marka kartı gridi
+- **PopupItem**: id, brand_name, logo_url, line1, line2, url, border_color, col_span, order
+- **AdSlot**: id, site_id, type("image"|"html"|"cta"), title, badge, description (1. satır),
+  **line2**, image_url (logo), target_url, html, cta_text, **border_color** (neon çerçeve),
+  col_span, height, order, active, clicks, created_at
+
+## Ziyaretçi tasarımı (tuna40 tarzı)
+Kompakt marquee + dar logo header + slim hero; ana yüzey marka kartı gridi. Her kart:
+koyu plaka, neon çerçeve + köşe braketleri, ortada logo/marka adı ve iki bonus satırı.
+Pop-up (deniz23 tarzı) aynı kart dilini kolonlu grid olarak kullanır, sağ üstte kırmızı
+yuvarlak kapatma butonu.
 - Koleksiyonlar: sites, ad_slots, admins, sessions (TTL), status_checks
 
 ## API (hepsi /api altında, api_router)
@@ -28,4 +38,5 @@ Tek admin rolü. Kullanıcı `admins` koleksiyonunda salt+sha256 ile saklanır; 
 `sessions` koleksiyonunda token olarak tutulur, httpOnly cookie ile taşınır.
 
 ## Seed
-`cd /app/backend && python seed.py` → 3 site (tuna40, deniz23, vipbonus) + 12 reklam alanı.
+`cd /app/backend && python seed.py` → 3 site: tuna40 (11 marka kartı + 8 pop-up kolonu),
+deniz23 (4 kart + 3 pop-up kolonu), vipbonus (2 kart, pop-up kapalı).
