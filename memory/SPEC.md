@@ -131,3 +131,7 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - settings.auto_purge (varsayilan true): PUT /api/cloudflare/auto-purge ile degisir
 - PUT /api/sites/{id} sonrasi routers.cloudflare.purge_site_cache(site_id) fire-and-forget calisir (sitenin domainlerine ait zone onbellegi)
 - POST /api/cloudflare/remove-domain {site_id, domain, delete_dns}: domaini siteden ceker, delete_dns ise kok+www A/CNAME kayitlarini Cloudflare dan siler, sonuc warning alani ile doner
+
+## Kendi sunucuya kurulum
+- deploy/ dizini: install.sh (Ubuntu tek komut), nginx-adcore.conf (panel domaini + default_server ile tum reklam domainleri), adcore-backend.service (uvicorn 127.0.0.1:8001), ssl.sh (certbot), update.sh, env.example, README.md
+- Panel domaini: marcopanel.site · Sunucu: 203.161.57.207 · Prod frontend: yarn build -> frontend/dist Nginx tarafindan servis edilir
