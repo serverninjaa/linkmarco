@@ -7,22 +7,23 @@ interface Props {
   accent: string;
 }
 
+// Mobilde de aynı kolon düzeni: kartlar masaüstüyle aynı sırada ve yan yana kalır.
 const SPAN: Record<number, string> = {
-  1: "sm:col-span-1",
-  2: "sm:col-span-2",
-  3: "sm:col-span-3",
-  4: "sm:col-span-4",
-  5: "sm:col-span-5",
-  6: "sm:col-span-6",
+  1: "col-span-1",
+  2: "col-span-2",
+  3: "col-span-3",
+  4: "col-span-4",
+  5: "col-span-5",
+  6: "col-span-6",
 };
 
 const COLS: Record<number, string> = {
-  1: "sm:grid-cols-1",
-  2: "sm:grid-cols-2",
-  3: "sm:grid-cols-3",
-  4: "sm:grid-cols-4",
-  5: "sm:grid-cols-5",
-  6: "sm:grid-cols-6",
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+  6: "grid-cols-6",
 };
 
 /** deniz23-style entry pop-up: a columned grid of neon-bordered sponsor cards. */
@@ -86,7 +87,7 @@ export default function WelcomePopupModal({ popup, accent }: Props) {
             </p>
           ) : (
             <div
-              className={`grid grid-cols-1 gap-3 ${COLS[popup.columns] ?? "sm:grid-cols-3"}`}
+              className={`grid gap-1.5 sm:gap-3 ${COLS[popup.columns] ?? "grid-cols-3"}`}
               data-testid="popup-grid"
             >
               {items.map((item) => {
@@ -98,7 +99,7 @@ export default function WelcomePopupModal({ popup, accent }: Props) {
                     target="_blank"
                     rel="noopener noreferrer"
                     data-testid="popup-ad-card"
-                    className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border px-3 py-5 text-center transition-all duration-200 hover:-translate-y-0.5 ${SPAN[item.col_span] ?? "sm:col-span-1"}`}
+                    className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-md border px-1.5 py-3 text-center transition-all duration-200 hover:-translate-y-0.5 sm:gap-1.5 sm:rounded-xl sm:px-3 sm:py-5 ${SPAN[item.col_span] ?? "col-span-1"}`}
                     style={{
                       background: "#05070B",
                       borderColor: `${c}80`,
@@ -121,7 +122,7 @@ export default function WelcomePopupModal({ popup, accent }: Props) {
                     ].map((cls) => (
                       <span
                         key={cls}
-                        className={`pointer-events-none absolute h-3 w-3 ${cls}`}
+                        className={`pointer-events-none absolute h-2 w-2 sm:h-3 sm:w-3 ${cls}`}
                         style={{ borderColor: c }}
                       />
                     ))}
@@ -130,12 +131,12 @@ export default function WelcomePopupModal({ popup, accent }: Props) {
                       <img
                         src={item.logo_url}
                         alt={item.brand_name}
-                        className="mb-1 max-h-8 w-auto max-w-[75%] object-contain transition-transform duration-200 group-hover:scale-105"
+                        className="mb-0.5 max-h-5 w-auto max-w-[85%] object-contain transition-transform duration-200 group-hover:scale-105 sm:mb-1 sm:max-h-8 sm:max-w-[75%]"
                         data-testid="popup-ad-logo"
                       />
                     ) : (
                       <span
-                        className="font-heading text-lg font-black uppercase tracking-tight"
+                        className="font-heading text-[13px] font-black uppercase leading-tight tracking-tight sm:text-lg"
                         style={{ color: c }}
                         data-testid="popup-ad-brand"
                       >
@@ -143,12 +144,17 @@ export default function WelcomePopupModal({ popup, accent }: Props) {
                       </span>
                     )}
                     {item.line1 ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-white" data-testid="popup-ad-line1">
+                      <span
+                        className="text-[10px] font-bold uppercase leading-snug tracking-tight text-white sm:text-[10px] sm:tracking-wide"
+                        data-testid="popup-ad-line1"
+                      >
                         {item.line1}
                       </span>
                     ) : null}
                     {item.line2 ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-slate-300">{item.line2}</span>
+                      <span className="text-[10px] font-bold uppercase leading-snug tracking-tight text-slate-300 sm:text-[10px] sm:tracking-wide">
+                        {item.line2}
+                      </span>
                     ) : null}
                   </a>
                 );

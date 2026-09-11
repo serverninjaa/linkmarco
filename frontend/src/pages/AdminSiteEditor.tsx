@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import type { AdSlot, AdType, PopupItem, Site } from "@/lib/types";
-import { AD_TYPE_LABELS, NEON_COLORS } from "@/lib/types";
+import type { AdSlot, AdType, BadgePosition, PopupItem, Site } from "@/lib/types";
+import { AD_TYPE_LABELS, BADGE_POSITION_LABELS, NEON_COLORS } from "@/lib/types";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, ExternalLink, ChevronUp, ChevronDown, X, GripVertical, Pencil } from "lucide-react";
 import LogoUpload from "@/components/admin/LogoUpload";
+import LiveSitePreview from "@/components/admin/LiveSitePreview";
 
 const COLORS: { key: "bg" | "panel" | "card" | "accent" | "accent2" | "text"; label: string }[] = [
   { key: "bg", label: "Arka Plan" },
@@ -66,6 +67,7 @@ export default function AdminSiteEditor() {
         type,
         title: "YENİ MARKA",
         badge: "",
+        badge_position: "center",
         description: "500₺ DENEME BONUSU",
         line2: "%30 KAYIP BONUSU",
         image_url: "",
@@ -197,7 +199,13 @@ export default function AdminSiteEditor() {
           <TabsTrigger value="tasarim" data-testid="tab-tasarim">Tasarım</TabsTrigger>
           <TabsTrigger value="popup" data-testid="tab-popup">Pop-up</TabsTrigger>
           <TabsTrigger value="reklam" data-testid="tab-reklam">Reklam Alanları</TabsTrigger>
+          <TabsTrigger value="onizleme" data-testid="tab-onizleme">Canlı Önizleme</TabsTrigger>
         </TabsList>
+
+        {/* CANLI CİHAZ ÖNİZLEMESİ */}
+        <TabsContent value="onizleme" className="mt-6">
+          <LiveSitePreview slug={draft.slug} />
+        </TabsContent>
 
         {/* GENEL */}
         <TabsContent value="genel" className="mt-6">
@@ -686,6 +694,25 @@ export default function AdminSiteEditor() {
                         onBlur={(e) => updateSlot.mutate({ id: slot.id, patch: { badge: e.target.value } })}
                         data-testid="slot-badge-input"
                       />
+                    </Field>
+                    <Field label="Rozet Konumu" id={`s-bpos-${slot.id}`}>
+                      <Select
+                        value={slot.badge_position}
+                        onValueChange={(v: string) =>
+                          updateSlot.mutate({ id: slot.id, patch: { badge_position: v as BadgePosition } })
+                        }
+                      >
+                        <SelectTrigger id={`s-bpos-${slot.id}`} data-testid="slot-badge-position-select">
+                          <SelectValue>{(v) => BADGE_POSITION_LABELS[v as string]}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(["left", "center", "right"] as BadgePosition[]).map((p) => (
+                            <SelectItem key={p} value={p}>
+                              {BADGE_POSITION_LABELS[p]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </Field>
                     {slot.type === "html" ? (
                       <div className="md:col-span-2">

@@ -161,6 +161,8 @@ async def main() -> None:
                 type=stype,
                 title=title,
                 badge=badge,
+                # Geniş kartlarda orta üst, tek kolonlarda sol üst — panelden değiştirilebilir.
+                badge_position="center" if span >= 2 else "left",
                 description=line1,
                 line2=line2,
                 target_url="https://example.com/git",

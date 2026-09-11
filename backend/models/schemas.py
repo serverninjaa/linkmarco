@@ -90,6 +90,7 @@ class Site(SiteBase):
 
 
 AdType = Literal["image", "html", "cta"]
+BadgePosition = Literal["left", "center", "right"]
 
 
 class AdSlotBase(BaseModel):
@@ -97,6 +98,7 @@ class AdSlotBase(BaseModel):
     type: AdType = "image"
     title: str = ""
     badge: str = ""
+    badge_position: BadgePosition = "center"
     description: str = ""
     line2: str = ""
     image_url: str = ""
@@ -118,6 +120,7 @@ class AdSlotUpdate(BaseModel):
     type: Optional[AdType] = None
     title: Optional[str] = None
     badge: Optional[str] = None
+    badge_position: Optional[BadgePosition] = None
     description: Optional[str] = None
     line2: Optional[str] = None
     image_url: Optional[str] = None

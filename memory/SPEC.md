@@ -12,8 +12,9 @@ gelen Host başlığına göre ilgili siteyi render eder; panelden `/?site=<slug
 - **Popup**: enabled, title, subtitle, image_url, cta_text, cta_url, countdown_seconds,
   **columns (1-6)**, **items: PopupItem[]** — pop-up artık kolonlu marka kartı gridi
 - **PopupItem**: id, brand_name, logo_url, line1, line2, url, border_color, col_span, order
-- **AdSlot**: id, site_id, type("image"|"html"|"cta"), title, badge, description (1. satır),
-  **line2**, image_url (logo), target_url, html, cta_text, **border_color** (neon çerçeve),
+- **AdSlot**: id, site_id, type("image"|"html"|"cta"), title, badge,
+  **badge_position ("left"|"center"|"right")**, description (1. satır), **line2**,
+  image_url (logo), target_url, html, cta_text, **border_color** (neon çerçeve),
   col_span, height, order, active, clicks, created_at
 
 ## Ziyaretçi tasarımı (tuna40 tarzı)
@@ -24,7 +25,17 @@ Grid başlığı = site.title, altındaki ince satır = site.tagline (ikisi de p
 Pop-up (deniz23 tarzı) aynı kart dilini kolonlu grid olarak kullanır, sağ üstte kırmızı
 yuvarlak kapatma butonu.
 
-## Panel: reklam alanları listesi
+## Mobil davranış (masaüstü paritesi)
+Grid ve pop-up kolon sayısı ile kart sırası mobilde masaüstüyle **birebir aynıdır**
+(`grid-cols-N` / `col-span-N`, breakpoint yok). Yalnızca ölçekler küçülür: kart yüksekliği
+`calc(var(--card-h)*0.62)`, başlık 13px, satırlar 10px, rozet 9px — okunur kalır, yatay
+kaydırma oluşmaz. Rozet kartın üstünde konumlanır ve içerik `pt-5` ile aşağı alınır, bu
+yüzden başlığı kapatmaz.
+
+## Panel: canlı cihaz önizlemesi
+`Canlı Önizleme` sekmesi ziyaretçi sayfasını iframe'de gösterir: Mobil (390px), Tablet
+(820px), Masaüstü (tam genişlik) + "Yenile". iframe tek kez mount edilir, cihaz değişiminde
+yalnızca sarmalayıcı genişliği değişir; `?preview=1` ile pop-up bastırılır.
 Kartlar varsayılan olarak kapalı tek satır özet (sıra no, logo, başlık, neon renk, tip,
 kolon/tıklama/durum) ~56px; "Düzenle" ile detay paneli açılır (~458px). Sürükle-bırak ve
 yukarı/aşağı butonları `POST /api/sites/{id}/slots/reorder` ile kalıcı sıralama yapar.

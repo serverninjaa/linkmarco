@@ -6,13 +6,14 @@ import { DEFAULT_THEME } from "@/lib/types";
 import AdSlotRenderer from "@/components/portal/AdSlotRenderer";
 import WelcomePopupModal from "@/components/portal/WelcomePopupModal";
 
+// Mobilde de aynı kolon sayısı: sıra ve yan yana görünüm masaüstüyle birebir aynı kalır.
 const COLS: Record<number, string> = {
-  1: "sm:grid-cols-1",
-  2: "sm:grid-cols-2",
-  3: "sm:grid-cols-3",
-  4: "sm:grid-cols-4",
-  5: "sm:grid-cols-5",
-  6: "sm:grid-cols-6",
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+  6: "grid-cols-6",
 };
 
 export default function PublicPortal() {
@@ -26,6 +27,8 @@ export default function PublicPortal() {
     retry: false,
   });
 
+  // Panel içindeki iframe önizlemesinde pop-up kapatılır, kart düzeni net görünür.
+  const isPreview = params.get("preview") === "1";
   const site = isError ? undefined : data?.site;
   const slots = isError ? [] : (data?.slots ?? []);
   const theme = site?.theme ?? DEFAULT_THEME;
@@ -34,7 +37,9 @@ export default function PublicPortal() {
   return (
     <div className="flex min-h-screen flex-col" style={{ background: theme.bg, color: theme.text }}>
       {site?.custom_css ? <style>{site.custom_css}</style> : null}
-      {site?.popup ? <WelcomePopupModal popup={site.popup} accent={theme.accent} /> : null}
+      {site?.popup && !isPreview ? (
+        <WelcomePopupModal popup={site.popup} accent={theme.accent} />
+      ) : null}
 
       {/* header — sadece logo, yönetim butonu yok */}
       <header
@@ -110,9 +115,9 @@ export default function PublicPortal() {
         ) : null}
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className={`grid gap-1.5 sm:gap-3 ${COLS[site?.columns ?? 3] ?? "grid-cols-3"}`}>
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-[150px] animate-pulse rounded-lg bg-white/5" />
+              <div key={i} className="h-[70px] animate-pulse rounded-md bg-white/5 sm:h-[150px]" />
             ))}
           </div>
         ) : slots.length === 0 ? (
@@ -124,7 +129,7 @@ export default function PublicPortal() {
           </div>
         ) : (
           <div
-            className={`grid grid-cols-1 gap-3 ${COLS[site?.columns ?? 3] ?? "sm:grid-cols-3"}`}
+            className={`grid gap-1.5 sm:gap-3 ${COLS[site?.columns ?? 3] ?? "grid-cols-3"}`}
             data-testid="ad-grid"
           >
             {slots.map((slot) => (

@@ -52,6 +52,7 @@ export interface Site {
 }
 
 export type AdType = "image" | "html" | "cta";
+export type BadgePosition = "left" | "center" | "right";
 
 export interface AdSlot {
   id: string;
@@ -59,6 +60,7 @@ export interface AdSlot {
   type: AdType;
   title: string;
   badge: string;
+  badge_position: BadgePosition;
   description: string;
   line2: string;
   image_url: string;
@@ -94,6 +96,12 @@ export const DEFAULT_THEME: Theme = {
   accent: "#22C55E",
   accent2: "#FACC15",
   text: "#F1F5F9",
+};
+
+export const BADGE_POSITION_LABELS: Record<string, string> = {
+  left: "Sol Üst",
+  center: "Orta Üst",
+  right: "Sağ Üst",
 };
 
 export const AD_TYPE_LABELS: Record<string, string> = {
