@@ -48,7 +48,12 @@ fi
 echo "==> Backend venv + bağımlılıklar"
 python3 -m venv "$APP_DIR/venv"
 "$APP_DIR/venv/bin/pip" install --upgrade pip wheel >/dev/null
-"$APP_DIR/venv/bin/pip" install -r "$APP_DIR/backend/requirements.txt"
+# Üretimde Emergent'a özel paketler ve dev araçları olmadan kurulur.
+if [ -f "$APP_DIR/deploy/requirements-prod.txt" ]; then
+  "$APP_DIR/venv/bin/pip" install -r "$APP_DIR/deploy/requirements-prod.txt"
+else
+  "$APP_DIR/venv/bin/pip" install -r "$APP_DIR/backend/requirements.txt"
+fi
 
 if [ ! -f "$APP_DIR/backend/.env" ]; then
   cp "$APP_DIR/deploy/env.example" "$APP_DIR/backend/.env"
