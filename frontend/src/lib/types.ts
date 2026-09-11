@@ -220,3 +220,61 @@ export const NEON_COLORS = [
   "#EC4899",
   "#84CC16",
 ];
+
+// ---- Cloudflare (backend/routers/cloudflare.py ile 1:1) --------------------
+export interface CfStatus {
+  configured: boolean;
+  token_valid: boolean;
+  token_status?: string | null;
+  account_id?: string | null;
+  account_name?: string | null;
+  server_ip: string;
+  message?: string | null;
+}
+
+export interface CfZone {
+  id: string;
+  name: string;
+  status: string;
+  paused: boolean;
+  name_servers: string[];
+}
+
+export interface CfRecord {
+  id: string;
+  type: string;
+  name: string;
+  content: string;
+  ttl: number;
+  proxied: boolean;
+}
+
+export interface CfRecordInput {
+  type: "A" | "CNAME";
+  name: string;
+  content: string;
+  ttl: number;
+  proxied: boolean;
+}
+
+export interface CfDomainCheck {
+  domain: string;
+  site_slug: string;
+  site_name: string;
+  zone_id?: string | null;
+  zone_status: string;
+  name_servers: string[];
+  ns_delegated: boolean;
+  a_record_ok: boolean;
+  a_record_content: string;
+  proxied: boolean;
+  www_ok: boolean;
+  resolved_ips: string[];
+  issues: string[];
+}
+
+export interface CfSslSettings {
+  zone_id: string;
+  ssl: string;
+  always_use_https: boolean;
+}

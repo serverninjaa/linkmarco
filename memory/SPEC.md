@@ -112,3 +112,17 @@ deniz23 (4 kart + 3 pop-up kolonu), vipbonus (2 kart, pop-up kapalı).
 
 ## Yükleme kuralları
 Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/uploads.py).
+
+## Cloudflare / DNS entegrasyonu
+- Token: backend/.env `CLOUDFLARE_API_TOKEN` (yalnızca backend; tarayıcıya gitmez)
+- API: `/api/cloudflare/status|settings|zones|zones/{id}/records|autowire` (hepsi admin cookie gerektirir)
+- `settings` koleksiyonunda `id=cloudflare` dokümanı: `server_ip`, `account_id`, `account_name`
+- autowire: zone yoksa oluşturur, @ ve www icin A kaydini server_ip ye proxy acik yazar
+- Cloudflare hatalari 400 + detail metni olarak doner (502 ingress tarafindan yutuluyor)
+
+### Cloudflare ek ozellikler
+- GET /api/cloudflare/verify-domains: her site domaini icin zone/NS/A kaydi + canli DNS cozumlemesi, issues listesi
+- POST /api/cloudflare/zones/{id}/purge-cache: purge_everything
+- GET|PUT /api/cloudflare/zones/{id}/ssl: ssl modu (off/flexible/full/strict) + always_use_https
+- POST /api/cloudflare/autowire artik opsiyonel site_id alir: domain secilen sitenin domains listesine eklenir
+- UI: frontend/src/components/admin/CloudflarePanels.tsx (DomainVerifyPanel, ZoneSslPanel)
