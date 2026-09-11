@@ -28,7 +28,14 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("id", ASCENDING)], name="id", unique=True),
         IndexModel([("site_id", ASCENDING), ("order", ASCENDING)], name="site_order"),
     ],
-    "uploads": [IndexModel([("id", ASCENDING)], name="id", unique=True)],
+    "click_events": [
+        IndexModel([("site_id", ASCENDING), ("day", ASCENDING)], name="site_day"),
+        IndexModel([("slot_id", ASCENDING), ("day", ASCENDING)], name="slot_day"),
+    ],
+    "uploads": [
+        IndexModel([("id", ASCENDING)], name="id", unique=True),
+        IndexModel([("created_at", DESCENDING)], name="created_desc"),
+    ],
     "admins": [IndexModel([("username", ASCENDING)], name="username", unique=True)],
     "sessions": [
         IndexModel([("token", ASCENDING)], name="token", unique=True),

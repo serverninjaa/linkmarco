@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, ExternalLink, Settings2, Copy } from "lucide-react";
+import { Plus, Trash2, ExternalLink, Settings2, Copy, Star } from "lucide-react";
 
 export default function AdminSites() {
   const qc = useQueryClient();
@@ -67,6 +67,15 @@ export default function AdminSites() {
     onError: () => toast.error("Kopyalanamadı — slug benzersiz olmalı"),
   });
 
+  const setDefault = useMutation({
+    mutationFn: (id: string) => apiPost<Site>(`/sites/${id}/set-default`, {}),
+    onSuccess: (site) => {
+      void qc.invalidateQueries({ queryKey: ["sites"] });
+      toast.success(`${site.name} varsayılan tasarım şablonu olarak kaydedildi`);
+    },
+    onError: () => toast.error("Varsayılan tasarım kaydedilemedi"),
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => apiDelete(`/sites/${id}`),
     onSuccess: () => {
@@ -107,6 +116,13 @@ export default function AdminSites() {
                 create.mutate();
               }}
             >
+              <p className="rounded-lg border border-[#1E293B] bg-[#0B0E17] p-3 text-xs text-slate-400">
+                Yeni site,{" "}
+                <strong className="text-amber-400">
+                  {list.find((s) => s.is_default)?.name ?? "varsayılan"}
+                </strong>{" "}
+                tasarımını (tema, kolon sayısı, pop-up ayarları, özel CSS) otomatik devralır.
+              </p>
               <div className="space-y-2">
                 <Label htmlFor="site-name">Site Adı</Label>
                 <Input
@@ -171,6 +187,14 @@ export default function AdminSites() {
                     {site.name}
                   </h2>
                   <code className="font-mono text-xs text-slate-500">/{site.slug}</code>
+                  {site.is_default ? (
+                    <span
+                      className="mt-2 flex w-fit items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-400 ring-1 ring-amber-500/40"
+                      data-testid="site-default-badge"
+                    >
+                      <Star className="h-3 w-3" /> Varsayılan tasarım
+                    </span>
+                  ) : null}
                 </div>
                 <span
                   className="h-8 w-8 shrink-0 rounded-lg"
@@ -223,6 +247,17 @@ export default function AdminSites() {
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Önizle
                 </Link>
+                {site.is_default ? null : (
+                  <button
+                    onClick={() => setDefault.mutate(site.id)}
+                    className="rounded-lg border border-[#1E293B] px-3 py-2 text-slate-400 transition-colors duration-150 hover:border-amber-500/60 hover:text-amber-400"
+                    aria-label="Varsayılan tasarım yap"
+                    title="Varsayılan tasarım yap"
+                    data-testid="site-set-default-button"
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setCloneSource(site);

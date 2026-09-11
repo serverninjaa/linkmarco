@@ -37,6 +37,68 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
   const badgeBg = slot.badge_bg || color;
   const badgeFg = slot.badge_text_color || "#000000";
   const sizeCls = TEXT_SIZE_CLASSES[slot.text_size] ?? TEXT_SIZE_CLASSES.md;
+  const fxSpeed = { "--fx-speed": `${Math.max(1, slot.effect_speed || 6)}s` } as CSSProperties;
+
+  // Kart arkası animasyonlu renk efekti (panelden aktif/pasif)
+  const renderEffect = () => {
+    if (!slot.effect || slot.effect === "none") return null;
+
+    if (slot.effect === "glow") {
+      return (
+        <span
+          aria-hidden
+          className="card-fx-glow pointer-events-none absolute inset-0 z-0"
+          style={{
+            ...fxSpeed,
+            background: `radial-gradient(circle at 50% 50%, ${color}80 0%, transparent 65%)`,
+          }}
+          data-testid="ad-card-effect"
+        />
+      );
+    }
+
+    if (slot.effect === "sweep") {
+      return (
+        <span aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden" data-testid="ad-card-effect">
+          <span
+            className="card-fx-sweep absolute inset-y-0 w-1/3"
+            style={{
+              ...fxSpeed,
+              background: `linear-gradient(90deg, transparent, ${color}66, transparent)`,
+            }}
+          />
+        </span>
+      );
+    }
+
+    if (slot.effect === "aurora") {
+      return (
+        <span
+          aria-hidden
+          className="card-fx-aurora pointer-events-none absolute inset-0 z-0 opacity-45"
+          style={{
+            ...fxSpeed,
+            background: `linear-gradient(120deg, ${color}00, ${color}99, #ffffff26, ${color}66, ${color}00)`,
+          }}
+          data-testid="ad-card-effect"
+        />
+      );
+    }
+
+    // border: dönen konik çerçeve
+    return (
+      <span aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden" data-testid="ad-card-effect">
+        <span
+          className="card-fx-border absolute left-1/2 top-1/2 h-[240%] w-[240%] -translate-x-1/2 -translate-y-1/2 opacity-60"
+          style={{
+            ...fxSpeed,
+            background: `conic-gradient(from 0deg, transparent 0deg, ${color} 70deg, transparent 140deg, transparent 360deg)`,
+          }}
+        />
+        <span className="absolute inset-[2px] rounded-md" style={{ background: cardBg }} />
+      </span>
+    );
+  };
 
   // Rozet konumu + stili panelden seçilir; mobilde başlığı kapatmaması için üstte durur.
   const badgePos =
@@ -166,10 +228,11 @@ export default function AdSlotRenderer({ slot, accent, cardBg }: Props) {
         />
       ))}
 
+      {renderEffect()}
       {renderBadge()}
 
       <div
-        className={`flex h-full flex-col items-center justify-center gap-1 px-2 text-center sm:gap-2 sm:px-5 sm:py-6 ${
+        className={`relative z-[1] flex h-full flex-col items-center justify-center gap-1 px-2 text-center sm:gap-2 sm:px-5 sm:py-6 ${
           slot.badge
             ? slot.badge_style === "ribbon"
               ? "pb-2 pt-7 sm:pt-8"

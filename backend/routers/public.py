@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
+from lib.dates import now_tz
 from lib.db import db
 from models.schemas import AdSlot, PublicSite, Site
 
@@ -36,7 +37,18 @@ async def resolve_site(request: Request, slug: Optional[str] = None, host: Optio
 
 @router.post("/slots/{slot_id}/click")
 async def track_click(slot_id: str):
-    res = await db.ad_slots.update_one({"id": slot_id}, {"$inc": {"clicks": 1}})
-    if res.matched_count == 0:
+    doc = await db.ad_slots.find_one({"id": slot_id}, {"site_id": 1})
+    if not doc:
         raise HTTPException(status_code=404, detail="Reklam alanı bulunamadı")
+    await db.ad_slots.update_one({"id": slot_id}, {"$inc": {"clicks": 1}})
+    # Günlük grafik için olay kaydı (gün, sunucu saatiyle sabitlenir)
+    now = now_tz()
+    await db.click_events.insert_one(
+        {
+            "slot_id": slot_id,
+            "site_id": doc["site_id"],
+            "day": now.strftime("%Y-%m-%d"),
+            "created_at": now,
+        }
+    )
     return {"ok": True}

@@ -86,6 +86,8 @@ class SiteUpdate(BaseModel):
 
 class Site(SiteBase):
     id: str = Field(default_factory=_uuid)
+    # Varsayılan tasarım şablonu: yeni siteler bu sitenin tasarımını devralır
+    is_default: bool = False
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -93,6 +95,9 @@ AdType = Literal["image", "html", "cta"]
 BadgePosition = Literal["left", "center", "right"]
 BadgeStyle = Literal["tab", "corner", "strip", "ribbon"]
 TextSize = Literal["sm", "md", "lg"]
+# Kart arkası animasyonlu renk efektleri
+CardEffect = Literal["none", "glow", "sweep", "aurora", "border"]
+LinkStatus = Literal["unknown", "ok", "redirect", "broken", "dead"]
 
 
 class AdSlotBase(BaseModel):
@@ -106,6 +111,8 @@ class AdSlotBase(BaseModel):
     badge_bg: str = ""
     badge_text_color: str = ""
     text_size: TextSize = "md"
+    effect: CardEffect = "none"
+    effect_speed: int = 6  # saniye
     description: str = ""
     line2: str = ""
     image_url: str = ""
@@ -132,6 +139,8 @@ class AdSlotUpdate(BaseModel):
     badge_bg: Optional[str] = None
     badge_text_color: Optional[str] = None
     text_size: Optional[TextSize] = None
+    effect: Optional[CardEffect] = None
+    effect_speed: Optional[int] = None
     description: Optional[str] = None
     line2: Optional[str] = None
     image_url: Optional[str] = None
@@ -148,6 +157,11 @@ class AdSlotUpdate(BaseModel):
 class AdSlot(AdSlotBase):
     id: str = Field(default_factory=_uuid)
     clicks: int = 0
+    # Link sağlık kontrolü sonuçları
+    link_status: LinkStatus = "unknown"
+    link_http_status: int = 0
+    link_final_url: str = ""
+    link_checked_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -163,3 +177,51 @@ class LoginRequest(BaseModel):
 
 class AdminUser(BaseModel):
     username: str
+
+
+class DailyPoint(BaseModel):
+    day: str  # YYYY-MM-DD
+    clicks: int
+
+
+class SlotStat(BaseModel):
+    slot_id: str
+    title: str
+    badge: str
+    border_color: str
+    clicks_total: int
+    clicks_range: int
+
+
+class SiteStats(BaseModel):
+    days: int
+    total_clicks: int
+    range_clicks: int
+    daily: List[DailyPoint]
+    slots: List[SlotStat]
+    per_slot_daily: dict[str, List[DailyPoint]]
+
+
+class LinkCheckResult(BaseModel):
+    slot_id: str
+    title: str
+    target_url: str
+    link_status: LinkStatus
+    link_http_status: int
+    link_final_url: str
+
+
+class LinkCheckSummary(BaseModel):
+    checked: int
+    ok: int
+    problems: int
+    results: List[LinkCheckResult]
+
+
+class UploadItem(BaseModel):
+    id: str
+    url: str
+    filename: str
+    content_type: str
+    size: int
+    created_at: datetime

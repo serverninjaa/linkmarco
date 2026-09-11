@@ -2,8 +2,26 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import type { AdSlot, AdType, BadgePosition, BadgeStyle, PopupItem, Site, TextSize } from "@/lib/types";
-import { AD_TYPE_LABELS, BADGE_POSITION_LABELS, BADGE_STYLE_LABELS, NEON_COLORS, TEXT_SIZE_LABELS } from "@/lib/types";
+import type {
+  AdSlot,
+  AdType,
+  BadgePosition,
+  BadgeStyle,
+  CardEffect,
+  LinkCheckSummary,
+  PopupItem,
+  Site,
+  TextSize,
+} from "@/lib/types";
+import {
+  AD_TYPE_LABELS,
+  BADGE_POSITION_LABELS,
+  BADGE_STYLE_LABELS,
+  CARD_EFFECT_LABELS,
+  LINK_STATUS_LABELS,
+  NEON_COLORS,
+  TEXT_SIZE_LABELS,
+} from "@/lib/types";
 import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +31,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, ExternalLink, ChevronUp, ChevronDown, X, GripVertical, Pencil } from "lucide-react";
-import LogoUpload from "@/components/admin/LogoUpload";
+import { ArrowLeft, Plus, Trash2, ExternalLink, ChevronUp, ChevronDown, X, GripVertical, Pencil, ShieldAlert, Link2, Loader2 } from "lucide-react";
+import LogoPickerDialog from "@/components/admin/LogoPickerDialog";
+import SiteStatsPanel from "@/components/admin/SiteStatsPanel";
 import LiveSitePreview from "@/components/admin/LiveSitePreview";
 
 const COLORS: { key: "bg" | "panel" | "card" | "accent" | "accent2" | "text"; label: string }[] = [
@@ -72,6 +91,8 @@ export default function AdminSiteEditor() {
         badge_bg: "",
         badge_text_color: "",
         text_size: "md",
+        effect: "none",
+        effect_speed: 6,
         description: "500₺ DENEME BONUSU",
         line2: "%30 KAYIP BONUSU",
         image_url: "",
@@ -106,6 +127,16 @@ export default function AdminSiteEditor() {
       toast.success("Sıralama güncellendi");
     },
     onError: () => toast.error("Sıralama kaydedilemedi"),
+  });
+
+  const checkLinks = useMutation({
+    mutationFn: () => apiPost<LinkCheckSummary>(`/sites/${siteId}/slots/check-links`, {}),
+    onSuccess: (res) => {
+      void qc.invalidateQueries({ queryKey: ["slots", siteId] });
+      if (res.problems === 0) toast.success(`${res.checked} link kontrol edildi — tümü çalışıyor`);
+      else toast.error(`${res.problems} sorunlu link bulundu (${res.ok} çalışıyor)`);
+    },
+    onError: () => toast.error("Link kontrolü başarısız"),
   });
 
   const removeSlot = useMutation({
@@ -204,7 +235,13 @@ export default function AdminSiteEditor() {
           <TabsTrigger value="popup" data-testid="tab-popup">Pop-up</TabsTrigger>
           <TabsTrigger value="reklam" data-testid="tab-reklam">Reklam Alanları</TabsTrigger>
           <TabsTrigger value="onizleme" data-testid="tab-onizleme">Canlı Önizleme</TabsTrigger>
+          <TabsTrigger value="istatistik" data-testid="tab-istatistik">İstatistikler</TabsTrigger>
         </TabsList>
+
+        {/* TIKLAMA İSTATİSTİKLERİ */}
+        <TabsContent value="istatistik" className="mt-6">
+          <SiteStatsPanel siteId={siteId} />
+        </TabsContent>
 
         {/* CANLI CİHAZ ÖNİZLEMESİ */}
         <TabsContent value="onizleme" className="mt-6">
@@ -460,8 +497,8 @@ export default function AdminSiteEditor() {
                             data-testid="popup-item-brand-input"
                           />
                         </Field>
-                        <Field label="Logo (dosya yükle)" id={`pi-l-${item.id}`}>
-                          <LogoUpload
+                        <Field label="Logo (kütüphaneden seç veya yükle)" id={`pi-l-${item.id}`}>
+                          <LogoPickerDialog
                             value={item.logo_url}
                             onChange={(url) => patchItem(idx, { logo_url: url })}
                             testId="popup-item-logo"
@@ -574,11 +611,32 @@ export default function AdminSiteEditor() {
                 <Plus className="mr-1 h-4 w-4" /> {AD_TYPE_LABELS[t]}
               </Button>
             ))}
+            <Button
+              variant="outline"
+              className="ml-auto border-[#1E293B]"
+              onClick={() => checkLinks.mutate()}
+              disabled={checkLinks.isPending}
+              data-testid="check-links-button"
+            >
+              {checkLinks.isPending ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="mr-1 h-4 w-4" />
+              )}
+              {checkLinks.isPending ? "Kontrol ediliyor" : "Linkleri Kontrol Et"}
+            </Button>
           </div>
 
           {list.length > 1 ? (
-            <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-500">
-              <GripVertical className="h-3.5 w-3.5" /> Kartları sürükleyip bırakarak sırayı değiştirebilirsiniz.
+            <p className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <GripVertical className="h-3.5 w-3.5" /> Kartları sürükleyip bırakarak sırayı değiştirebilirsiniz.
+              </span>
+              {list.some((s) => s.link_status !== "unknown" && s.link_status !== "ok") ? (
+                <span className="font-bold text-red-400" data-testid="link-problem-summary">
+                  {list.filter((s) => s.link_status !== "unknown" && s.link_status !== "ok").length} kartta link sorunu var
+                </span>
+              ) : null}
             </p>
           ) : null}
 
@@ -629,6 +687,25 @@ export default function AdminSiteEditor() {
                       <span className="hidden rounded bg-[#1E293B] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-amber-400 sm:inline">
                         {AD_TYPE_LABELS[slot.type]}
                       </span>
+                      {slot.link_status !== "unknown" && slot.link_status !== "ok" ? (
+                        <span
+                          className="inline-flex shrink-0 items-center gap-1 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-400 ring-1 ring-red-500/40"
+                          title={`${LINK_STATUS_LABELS[slot.link_status]}${slot.link_http_status ? ` (HTTP ${slot.link_http_status})` : ""}`}
+                          data-testid="slot-link-broken-badge"
+                        >
+                          <ShieldAlert className="h-3 w-3" />
+                          {LINK_STATUS_LABELS[slot.link_status]}
+                          {slot.link_http_status ? ` ${slot.link_http_status}` : ""}
+                        </span>
+                      ) : null}
+                      {slot.link_status === "ok" ? (
+                        <span
+                          className="hidden shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-400 sm:inline"
+                          data-testid="slot-link-ok-badge"
+                        >
+                          link ok
+                        </span>
+                      ) : null}
                       <span className="hidden font-mono text-[10px] text-slate-500 md:inline">
                         {slot.col_span} kolon · {TEXT_SIZE_LABELS[slot.text_size]} yazı · {slot.clicks} tıklama ·{" "}
                         {slot.active ? "yayında" : "pasif"}
@@ -804,8 +881,8 @@ export default function AdminSiteEditor() {
                       </div>
                     ) : (
                       <>
-                        <Field label="Marka Logosu (dosya yükle)" id={`s-img-${slot.id}`}>
-                          <LogoUpload
+                        <Field label="Marka Logosu (kütüphaneden seç veya yükle)" id={`s-img-${slot.id}`}>
+                          <LogoPickerDialog
                             value={slot.image_url}
                             onChange={(url) => updateSlot.mutate({ id: slot.id, patch: { image_url: url } })}
                             testId="slot-logo"
@@ -851,6 +928,41 @@ export default function AdminSiteEditor() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </Field>
+                    <Field label="Arka Plan Efekti" id={`s-fx-${slot.id}`}>
+                      <Select
+                        value={slot.effect}
+                        onValueChange={(v: string) =>
+                          updateSlot.mutate({ id: slot.id, patch: { effect: v as CardEffect } })
+                        }
+                      >
+                        <SelectTrigger id={`s-fx-${slot.id}`} data-testid="slot-effect-select">
+                          <SelectValue>{(v) => CARD_EFFECT_LABELS[v as string]}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(["none", "glow", "sweep", "aurora", "border"] as CardEffect[]).map((e) => (
+                            <SelectItem key={e} value={e}>
+                              {CARD_EFFECT_LABELS[e]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Efekt Hızı (saniye)" id={`s-fxs-${slot.id}`}>
+                      <Input
+                        id={`s-fxs-${slot.id}`}
+                        type="number"
+                        min={1}
+                        max={30}
+                        defaultValue={slot.effect_speed}
+                        onBlur={(e) =>
+                          updateSlot.mutate({
+                            id: slot.id,
+                            patch: { effect_speed: Math.max(1, Math.min(30, Number(e.target.value) || 6)) },
+                          })
+                        }
+                        data-testid="slot-effect-speed-input"
+                      />
                     </Field>
                     <Field label="Yükseklik (px)" id={`s-h-${slot.id}`}>
                       <Input

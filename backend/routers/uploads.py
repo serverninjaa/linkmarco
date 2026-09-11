@@ -3,11 +3,14 @@
 import uuid
 from datetime import datetime, timezone
 
+from typing import List
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 
 from lib.db import db
+from models.schemas import UploadItem
 from routers.auth import require_admin
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
@@ -40,6 +43,31 @@ async def upload_image(file: UploadFile = File(...)):
         }
     )
     return UploadResult(url=f"/api/uploads/{upload_id}")
+
+
+@router.get("", response_model=List[UploadItem], dependencies=[Depends(require_admin)])
+async def list_uploads():
+    """Medya kütüphanesi: yüklenen tüm görseller (yeniden eskiye)."""
+    docs = await db.uploads.find().sort("created_at", -1).to_list(1000)
+    return [
+        UploadItem(
+            id=d["id"],
+            url=f"/api/uploads/{d['id']}",
+            filename=d.get("filename", "logo"),
+            content_type=d.get("content_type", "image/png"),
+            size=len(d.get("data", b"")),
+            created_at=d.get("created_at") or datetime.now(timezone.utc),
+        )
+        for d in docs
+    ]
+
+
+@router.delete("/{upload_id}", dependencies=[Depends(require_admin)])
+async def delete_upload(upload_id: str):
+    res = await db.uploads.delete_one({"id": upload_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Görsel bulunamadı")
+    return {"ok": True}
 
 
 @router.get("/{upload_id}")

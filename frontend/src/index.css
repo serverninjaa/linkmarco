@@ -130,12 +130,40 @@
     50% { box-shadow: 0 0 28px 4px rgba(245, 158, 11, 0.18); }
 }
 
+/* Kart arkası efektleri — kart ayarlarından açılıp kapatılır */
+@keyframes card-glow {
+    0%, 100% { opacity: 0.25; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.06); }
+}
+
+@keyframes card-sweep {
+    0% { transform: translateX(-120%) skewX(-18deg); }
+    100% { transform: translateX(220%) skewX(-18deg); }
+}
+
+@keyframes card-aurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes card-border-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.card-fx-glow { animation: card-glow var(--fx-speed, 6s) ease-in-out infinite; }
+.card-fx-sweep { animation: card-sweep var(--fx-speed, 6s) linear infinite; }
+.card-fx-aurora { background-size: 300% 300%; animation: card-aurora var(--fx-speed, 6s) linear infinite; }
+.card-fx-border { animation: card-border-spin var(--fx-speed, 6s) linear infinite; }
+
 .animate-marquee { animation: marquee-scroll 28s linear infinite; }
 .animate-pop-in { animation: pop-in 320ms cubic-bezier(0.22, 1, 0.36, 1); }
 .animate-glow { animation: glow-pulse 2.8s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-    .animate-marquee, .animate-pop-in, .animate-glow { animation: none; }
+    .animate-marquee, .animate-pop-in, .animate-glow,
+    .card-fx-glow, .card-fx-sweep, .card-fx-aurora, .card-fx-border { animation: none; }
 }
 
 @layer base {

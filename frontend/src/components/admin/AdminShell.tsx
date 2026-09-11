@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api";
 import type { AdminUser } from "@/lib/types";
 import { useEffect, type ReactNode } from "react";
-import { LayoutGrid, Cloud, LogOut, Globe } from "lucide-react";
+import { LayoutGrid, Cloud, LogOut, Globe, Images } from "lucide-react";
 
 const NAV = [
   { to: "/admin", label: "Siteler & Domainler", icon: LayoutGrid },
+  { to: "/admin/library", label: "Kütüphane", icon: Images },
   { to: "/admin/cloudflare", label: "Cloudflare / DNS", icon: Cloud },
 ];
 

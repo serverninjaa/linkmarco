@@ -77,6 +77,31 @@ kaydedilir ve `/api/uploads/<id>` olarak servis edilir. `/_next/image` optimizas
 0 byte dönebildiği için ham yollar kullanılır; 200 byte altı yanıtlar atlanır (script idempotent).
 8 pop-up kolonu + 10 reklam kartı (STAKE ve BETMANİ sadece kart olarak).
 
+## Kütüphane (medya)
+Sol menüde **Kütüphane** (`/admin/library`): sunucuda barındırılan tüm marka logoları —
+çoklu yükleme, bağlantı kopyalama, silme. Uçlar: `GET /api/uploads` (liste, auth),
+`POST /api/uploads` (yükleme), `DELETE /api/uploads/{id}`, `GET /api/uploads/{id}` (public).
+Kart ve pop-up kolonlarındaki logo alanı `LogoPickerDialog` pop-up'ını açar: kütüphaneden
+seçim + bilgisayardan yükleme (yüklenen görsel kütüphaneye de eklenir).
+
+## Varsayılan tasarım şablonu
+`Site.is_default` — tek seferde bir site. `POST /api/sites/{id}/set-default` ile ayarlanır
+(panelde yıldız butonu + "Varsayılan tasarım" rozeti). Yeni site oluşturulduğunda şablonun
+teması, kolon sayısı, özel CSS'i ve pop-up ayarları devralınır (pop-up kolonları ve reklam
+kartları kopyalanmaz). Marco Portal varsayılan olarak kayıtlıdır.
+
+## Link sağlık kontrolü & istatistikler
+`POST /api/sites/{id}/slots/check-links` — her kartın hedef linkini izler; 404/410/5xx ve
+bağlantı hatası ölü/bozuk sayılır, **403/405/406/429 bot koruması olduğu için "ok"** kabul
+edilir (yanlış alarm olmasın). Sonuç kartta kırmızı rozet olarak görünür.
+`GET /api/sites/{id}/stats?days=7|14|30` — `click_events` koleksiyonundan günlük seri +
+sponsor sıralaması; panelde "İstatistikler" sekmesinde recharts grafiği.
+
+## Kart arkası efektleri
+`AdSlot.effect` ("none"|"glow"|"sweep"|"aurora"|"border") + `effect_speed` (saniye).
+Keyframe'ler `index.css` içinde (`card-fx-*`), `prefers-reduced-motion` ile kapanır.
+Kart ayarlarından açılıp kapatılır.
+
 ## Şablon kopyalama
 `POST /api/sites/{id}/duplicate` {slug, name, domains} → tema, pop-up kolonları ve tüm
 reklam kartları yeni siteye kopyalanır (tıklama sayaçları sıfırlanır).
