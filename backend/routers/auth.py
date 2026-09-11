@@ -5,7 +5,7 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Cookie, HTTPException, Response
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response
 from typing import Optional
 
 from lib.db import db
@@ -49,7 +49,7 @@ async def require_admin(ads_session: Optional[str] = Cookie(default=None)) -> st
 
 
 @router.post("/login", response_model=AdminUser)
-async def login(payload: LoginRequest, response: Response):
+async def login(payload: LoginRequest, request: Request, response: Response):
     await ensure_default_admin()
     user = await db.admins.find_one({"username": payload.username})
     if not user or hash_password(payload.password, user["salt"]) != user["password_hash"]:
@@ -62,8 +62,18 @@ async def login(payload: LoginRequest, response: Response):
             "expires_at": datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS),
         }
     )
+    # Ters vekil (Nginx/Cloudflare) arkasında şema X-Forwarded-Proto ile gelir;
+    # https ise çerez Secure işaretlenir (katı gizlilik ayarlı tarayıcılar için).
+    forwarded = request.headers.get("x-forwarded-proto", "")
+    is_https = forwarded.split(",")[0].strip() == "https" or request.url.scheme == "https"
     response.set_cookie(
-        COOKIE, token, httponly=True, samesite="lax", max_age=SESSION_DAYS * 86400, path="/"
+        COOKIE,
+        token,
+        httponly=True,
+        samesite="lax",
+        secure=is_https,
+        max_age=SESSION_DAYS * 86400,
+        path="/",
     )
     return AdminUser(username=user["username"])
 
