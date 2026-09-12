@@ -212,3 +212,16 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   2) sunucuda `bash /opt/adcore/deploy/ssl-ads.sh sultan5.com <yenidomain>` (tum reklam domainlerini yaz),
   3) script sertifikayi --expand ile yeniler ve nginx'i reload eder.
 - Panel kodundaki Tunnel karti/uclari kodda duruyor ama kullanilmiyor; "Tuneli sifirdan kur" butonuna BASMAYIN.
+
+## Default Tasarimlar (tasarim sablonlari) — 12 Eyl
+- Koleksiyon: `design_templates`. Model: DesignTemplate {id, name(unique), description, source_site_slug,
+  preview_image_url, used_count, snapshot, created_at}.
+  snapshot = DesignTemplateSnapshot {title, tagline, logo_text, hero_image_url, marquee, columns, theme,
+  popup, custom_css, slots[]} -> siteden KOPYA; kaynak site sonradan degisse sablon degismez.
+- Uclar (backend/routers/templates.py, hepsi /api/templates altinda, require_admin):
+  GET ""  POST "" {name, source_site_id, description, include_slots}  GET/PUT/DELETE "/{id}"
+  POST "/{id}/create-site" {slug, name, domains[], include_slots} -> yeni Site (+ istenirse kartlar), used_count++.
+- Panel: sol menude "Default Tasarimlar" (/admin/templates, frontend/src/pages/AdminTemplates.tsx).
+  Kart grid'i; karta tiklayinca "Bu tasarimla site olustur" diyalogu (slug/isim/domainler/kartlari kopyala),
+  olusturunca dogrudan site editorune yonlendirir. "Siteden sablon kaydet" butonu ile mevcut siteden sablon alinir.
+- Not: sites.py'daki eski `is_default` mantigi (tek varsayilan site) korundu; yeni sablon sistemi ondan bagimsiz.

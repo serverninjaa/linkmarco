@@ -165,6 +165,54 @@ class AdSlot(AdSlotBase):
     created_at: datetime = Field(default_factory=_now)
 
 
+class DesignTemplateSnapshot(BaseModel):
+    """Siteden kopyalanan tasarım verisi (kimlik alanları hariç)."""
+
+    title: str = ""
+    tagline: str = ""
+    logo_text: str = ""
+    hero_image_url: str = ""
+    marquee: List[str] = Field(default_factory=list)
+    columns: int = 4
+    theme: Theme = Field(default_factory=Theme)
+    popup: Popup = Field(default_factory=Popup)
+    custom_css: str = ""
+    # Reklam kartları şablonla birlikte saklanır (istenirse kopyalanır).
+    slots: List[dict] = Field(default_factory=list)
+
+
+class DesignTemplateCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=60)
+    source_site_id: str
+    description: str = ""
+    preview_image_url: str = ""
+    include_slots: bool = True
+
+
+class DesignTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    preview_image_url: Optional[str] = None
+
+
+class DesignTemplate(BaseModel):
+    id: str = Field(default_factory=_uuid)
+    name: str
+    description: str = ""
+    source_site_slug: str = ""
+    preview_image_url: str = ""
+    used_count: int = 0
+    snapshot: DesignTemplateSnapshot = Field(default_factory=DesignTemplateSnapshot)
+    created_at: datetime = Field(default_factory=_now)
+
+
+class TemplateSiteCreate(BaseModel):
+    slug: str = Field(min_length=2, max_length=40)
+    name: str = ""
+    domains: List[str] = Field(default_factory=list)
+    include_slots: bool = True
+
+
 class PublicSite(BaseModel):
     site: Site
     slots: List[AdSlot]

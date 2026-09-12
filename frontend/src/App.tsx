@@ -6,6 +6,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminSites from "@/pages/AdminSites";
 import AdminSiteEditor from "@/pages/AdminSiteEditor";
 import AdminLibrary from "@/pages/AdminLibrary";
+import AdminTemplates from "@/pages/AdminTemplates";
 import AdminCloudflare from "@/pages/AdminCloudflare";
 
 // One <Route> per page in src/pages; BrowserRouter already wraps this in main.tsx.
@@ -36,6 +37,14 @@ export default function App() {
           element={
             <AdminOnlyHost>
               <AdminSiteEditor />
+            </AdminOnlyHost>
+          }
+        />
+        <Route
+          path="/admin/templates"
+          element={
+            <AdminOnlyHost>
+              <AdminTemplates />
             </AdminOnlyHost>
           }
         />

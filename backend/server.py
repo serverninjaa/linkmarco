@@ -66,8 +66,10 @@ from routers.public import router as public_router
 from routers.sites import router as sites_router
 from routers.uploads import router as uploads_router
 from routers.cloudflare import router as cloudflare_router
+from routers.templates import router as templates_router
 
 api_router.include_router(cloudflare_router)
+api_router.include_router(templates_router)
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
 api_router.include_router(sites_router)

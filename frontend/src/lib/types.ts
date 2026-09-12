@@ -245,6 +245,45 @@ export interface CfTunnelStatus {
   message?: string | null;
 }
 
+export interface DesignTemplateSnapshot {
+  title: string;
+  tagline: string;
+  logo_text: string;
+  hero_image_url: string;
+  marquee: string[];
+  columns: number;
+  theme: Theme;
+  popup: Popup;
+  custom_css: string;
+  slots: Record<string, unknown>[];
+}
+
+export interface DesignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  source_site_slug: string;
+  preview_image_url: string;
+  used_count: number;
+  snapshot: DesignTemplateSnapshot;
+  created_at: string;
+}
+
+export interface DesignTemplateCreate {
+  name: string;
+  source_site_id: string;
+  description?: string;
+  preview_image_url?: string;
+  include_slots?: boolean;
+}
+
+export interface TemplateSiteCreate {
+  slug: string;
+  name?: string;
+  domains?: string[];
+  include_slots?: boolean;
+}
+
 export interface CfTunnelAttachResult {
   panel_domain: string;
   target: string;
