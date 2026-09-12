@@ -185,3 +185,12 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   originRequest.originServerName = PANEL_DOMAIN olmali. http://127.0.0.1:80 kullanilirsa sonsuz redirect dongusu olur.
 - Ingress sirasi: panel hostname kurallari -> en sonda catch-all {"service":"http://127.0.0.1:80"} (reklam domainleri).
 - marcopanel.site ve www.marcopanel.site 12 Eyl itibariyle tunel CNAME'inde; A kaydi kalmadi.
+
+### UYARI: "Tuneli sifirdan kur" yikici bir islemdir
+- rebuild eski tuneli SILER; sunucudaki cloudflared silinmis tunele bagli kaldigi icin panel + tum reklam
+  domainleri Cloudflare 530/1033 verir. Kurtarma: yeni tunel tokenini VPS'te
+  `cloudflared service uninstall; cloudflared service install <TOKEN>; systemctl enable --now cloudflared`.
+- Bu yuzden butona window.confirm uyarisi eklendi ve rebuild artik PANEL_DOMAIN icin https ingress kuralini
+  otomatik koruyor (yoksa panelde sonsuz redirect olur).
+- 12 Eyl: kullanici butona bastigi icin tunel 3ca29d12 silindi, yerine 11aba424-2562-4c14-b74b-f7a403ef5466 kuruldu;
+  tum domainler (sultan5.com, marcopanel.site, harem5.com) bu tunele CNAME'lendi.

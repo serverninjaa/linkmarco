@@ -115,7 +115,13 @@ export default function TunnelPanel({ enabled }: { enabled: boolean }) {
         <button
           className={btn}
           disabled={!enabled || rebuild.isPending}
-          onClick={() => rebuild.mutate()}
+          onClick={() => {
+            const ok = window.confirm(
+              "DİKKAT: Mevcut tünel silinir ve panel dahil tüm domainler, sunucuda yeni token kurulana kadar ERİŞİLEMEZ olur.\n\n" +
+                "Kurulum sonrası çıkan komutu sunucuda çalıştırmanız ZORUNLUDUR. Devam edilsin mi?",
+            );
+            if (ok) rebuild.mutate();
+          }}
           data-testid="tunnel-rebuild-button"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${rebuild.isPending ? "animate-spin" : ""}`} />

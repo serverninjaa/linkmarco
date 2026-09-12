@@ -498,11 +498,16 @@ async def tunnel_rebuild(payload: CfTunnelRebuildRequest):
     tunnel_id = tunnel["id"]
 
     # Catch-all ingress: hostname yazmıyoruz — CNAME'i bu tünele bakan HER domain çalışır,
-    # cloudflared orijinal Host başlığını olduğu gibi Nginx'e iletir.
+    # cloudflared orijinal Host başlığını olduğu gibi Nginx'e iletir. Panel domaini origin'de
+    # 80 → 443 yönlendirdiği için kendi HTTPS kuralıyla catch-all'dan ÖNCE gelir.
+    panel_domain = os.environ.get("PANEL_DOMAIN", "").strip().lower().removeprefix("www.")
+    ingress = (panel_ingress(panel_domain) if panel_domain else []) + [
+        {"service": "http://127.0.0.1:80"}
+    ]
     await call(
         "PUT",
         f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}/configurations",
-        json={"config": {"ingress": [{"service": "http://127.0.0.1:80"}]}},
+        json={"config": {"ingress": ingress}},
     )
     token_body = await call("GET", f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}/token")
     install_token = token_body.get("result") or ""
