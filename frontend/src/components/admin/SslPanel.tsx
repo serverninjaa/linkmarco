@@ -25,6 +25,7 @@ export default function SslPanel({ enabled }: { enabled: boolean }) {
     queryFn: () => apiGet<SslStatus>("/ssl"),
     enabled,
     retry: false,
+    staleTime: 0,
   });
 
   const issue = useMutation({
@@ -58,11 +59,17 @@ export default function SslPanel({ enabled }: { enabled: boolean }) {
         </div>
         <button
           className={ghost}
-          onClick={() => void statusQ.refetch()}
-          disabled={!enabled}
+          onClick={() => {
+            void statusQ
+              .refetch()
+              .then(() => toast.success("DNS ve sertifika durumu yenilendi"))
+              .catch(() => toast.error("Durum alınamadı"));
+          }}
+          disabled={!enabled || statusQ.isFetching}
           data-testid="ssl-refresh-button"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Yenile
+          <RefreshCw className={`h-3.5 w-3.5 ${statusQ.isFetching ? "animate-spin" : ""}`} />
+          {statusQ.isFetching ? "Kontrol ediliyor…" : "Yenile"}
         </button>
       </header>
 

@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+import httpx
 from pydantic import BaseModel
 
 from lib.db import db
@@ -19,7 +20,7 @@ from routers.auth import require_admin
 
 router = APIRouter(prefix="/ssl", tags=["ssl"], dependencies=[Depends(require_admin)])
 
-SETTINGS_ID = "singleton"
+SETTINGS_ID = "cloudflare"  # ayarlar cloudflare router'ı ile aynı dokümanda tutulur
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "deploy" / "ssl-ads.sh"
 CERT_DIR = Path("/etc/letsencrypt/live/ads")
 
@@ -67,6 +68,25 @@ async def _panel_domains() -> List[tuple[str, str]]:
     return out
 
 
+async def _resolve_live(host: str) -> str:
+    """DNS'i doğrudan Cloudflare DoH'a sorar (sunucunun önbelleği yüzünden eski sonuç gelmesin).
+    Başarısız olursa sistem çözümleyicisine düşer."""
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            res = await client.get(
+                "https://cloudflare-dns.com/dns-query",
+                params={"name": host, "type": "A"},
+                headers={"accept": "application/dns-json"},
+            )
+        answers = (res.json() or {}).get("Answer") or []
+        for a in answers:
+            if a.get("type") == 1:  # A kaydı
+                return str(a.get("data", ""))
+    except (httpx.HTTPError, ValueError, KeyError):
+        pass
+    return await asyncio.to_thread(_resolve, host)
+
+
 def _resolve(host: str) -> str:
     try:
         return socket.gethostbyname(host)
@@ -108,7 +128,7 @@ async def ssl_status():
     for domain, slug in await _panel_domains():
         if panel_domain and domain == panel_domain:
             continue  # panel domaini kendi sertifikasını kullanır
-        ip = await asyncio.to_thread(_resolve, domain)
+        ip = await _resolve_live(domain)
         dns_ok = bool(server_ip) and ip == server_ip
         cert_ok = domain in certs
         issue = ""
