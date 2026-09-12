@@ -285,3 +285,10 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   DNS/SSL rozetleri, "Sertifika al & yayına al" butonu (DNS dogru degilse pasif) ve komut ciktisi.
 - YENI DOMAIN AKISI (onerilen, Cloudflare'sız): kayit firmasinda A kaydi -> 203.161.57.207,
   panelde domaini ekle + Aktif Et, panelden "Sertifika al & yayına al". SSH gerekmez.
+
+## Oturum cerezi (12 Eyl)
+- ads_session cerezi HTTPS'te `SameSite=None; Secure` yazilir (HTTP'de Lax). Sebep: panel Emergent
+  Preview'da IFRAME icinde aciliyor; Lax cerez capraz-site sayilip atiliyordu -> giris basarili gorunup
+  /auth/me 401 donuyor ve kullanici giris ekranina geri atiliyordu.
+- logout da ayni niteliklerle delete_cookie yapar (nitelikler uyusmazsa tarayici cerezi silmez).
+- Sifre: her iki ortamda admin / 1727Fd40. (preview db.admins kaydi elle guncellendi).
