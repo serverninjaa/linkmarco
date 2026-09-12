@@ -43,6 +43,7 @@ export interface Site {
   logo_text: string;
   hero_image_url: string;
   marquee: string[];
+  active_domain: string;
   columns: number;
   theme: Theme;
   popup: Popup;
@@ -152,6 +153,8 @@ export const LINK_STATUS_LABELS: Record<string, string> = {
 export interface PublicSite {
   site: Site;
   slots: AdSlot[];
+  /** "live": normal yayın · "pending": domain bağlı ama panelden aktif edilmemiş */
+  status: string;
 }
 
 export interface AdminUser {

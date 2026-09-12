@@ -99,6 +99,14 @@ async def update_site(site_id: str, payload: SiteUpdate):
     if not doc:
         raise HTTPException(status_code=404, detail="Site bulunamadı")
     changes = payload.model_dump(exclude_none=True)
+    if "active_domain" in changes:
+        wanted = str(changes["active_domain"]).strip().lower().removeprefix("www.")
+        domains = changes.get("domains") or doc.get("domains") or []
+        if wanted and wanted not in domains:
+            raise HTTPException(
+                status_code=422, detail="Aktif domain, sitenin domain listesinde olmalı"
+            )
+        changes["active_domain"] = wanted
     if changes:
         await db.sites.update_one({"id": site_id}, {"$set": changes})
         doc = await db.sites.find_one({"id": site_id})

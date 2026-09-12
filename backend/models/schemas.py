@@ -57,6 +57,9 @@ class SiteBase(BaseModel):
     logo_text: str = ""
     hero_image_url: str = ""
     marquee: List[str] = Field(default_factory=list)
+    # Yalnizca bu domain siteyi yayinlar; diger domainler "hazirlaniyor" ekrani gosterir.
+    # Bos birakilirsa (eski siteler) tum domainler yayindadir.
+    active_domain: str = ""
     columns: int = 4
     theme: Theme = Field(default_factory=Theme)
     popup: Popup = Field(default_factory=Popup)
@@ -81,6 +84,7 @@ class SiteUpdate(BaseModel):
     logo_text: Optional[str] = None
     hero_image_url: Optional[str] = None
     marquee: Optional[List[str]] = None
+    active_domain: Optional[str] = None
     columns: Optional[int] = None
     theme: Optional[Theme] = None
     popup: Optional[Popup] = None
@@ -230,6 +234,8 @@ class TemplateSiteCreate(BaseModel):
 class PublicSite(BaseModel):
     site: Site
     slots: List[AdSlot]
+    # "live": normal yayın · "pending": domain bağlı ama panelden aktif edilmemiş
+    status: str = "live"
 
 
 class LoginRequest(BaseModel):

@@ -386,6 +386,10 @@ export default function AdminSiteEditor() {
           <div className="max-w-2xl space-y-4 rounded-xl border border-[#1E293B] bg-[#121620] p-6">
             <p className="text-sm text-slate-400">
               Buraya eklenen her domain, gelen isteğin Host başlığına göre bu siteyi gösterir.
+              <span className="mt-1 block text-xs text-amber-400/90">
+                Yalnızca <b>aktif</b> domain siteyi yayınlar. Diğer domainlere girenler
+                "Domain hazırlanıyor" ekranını görür. Hiçbiri seçilmezse tüm domainler yayında olur.
+              </span>
             </p>
             <div className="flex gap-2">
               <Input
@@ -413,27 +417,58 @@ export default function AdminSiteEditor() {
               {draft.domains.length === 0 ? (
                 <p className="text-xs text-slate-500">Henüz domain bağlanmadı.</p>
               ) : (
-                draft.domains.map((d) => (
+                draft.domains.map((d) => {
+                  const isActive = draft.active_domain === d;
+                  return (
                   <div
                     key={d}
-                    className="flex items-center justify-between rounded-lg border border-[#1E293B] bg-[#0B0E17] px-4 py-2.5"
+                    className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-2.5 transition-colors duration-150 ${
+                      isActive
+                        ? "border-emerald-500/60 bg-emerald-500/5"
+                        : "border-[#1E293B] bg-[#0B0E17]"
+                    }`}
                     data-testid="domain-row"
                   >
                     <code className="font-mono text-sm text-cyan-300">{d}</code>
-                    <button
-                      className="text-slate-500 transition-colors duration-150 hover:text-red-400"
-                      aria-label={`${d} kaldır`}
-                      data-testid="remove-domain-button"
-                      onClick={() => {
-                        const domains = draft.domains.filter((x) => x !== d);
-                        set("domains", domains);
-                        saveSite.mutate({ ...draft, domains });
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {isActive ? (
+                        <span
+                          className="rounded-full border border-emerald-500/50 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-400"
+                          data-testid={`domain-active-badge-${d}`}
+                        >
+                          Aktif
+                        </span>
+                      ) : (
+                        <button
+                          className="rounded-lg border border-[#1E293B] px-2.5 py-1 text-[11px] font-bold text-slate-300 transition-colors duration-150 hover:border-emerald-500/60 hover:text-emerald-400"
+                          data-testid={`domain-activate-button-${d}`}
+                          onClick={() => {
+                            set("active_domain", d);
+                            saveSite.mutate({ ...draft, active_domain: d });
+                          }}
+                        >
+                          Aktif Et
+                        </button>
+                      )}
+                      <button
+                        className="text-slate-500 transition-colors duration-150 hover:text-red-400"
+                        aria-label={`${d} kaldır`}
+                        data-testid="remove-domain-button"
+                        onClick={() => {
+                          const domains = draft.domains.filter((x) => x !== d);
+                          const active_domain =
+                            draft.active_domain === d ? "" : draft.active_domain;
+                          set("domains", domains);
+                          set("active_domain", active_domain);
+                          saveSite.mutate({ ...draft, domains, active_domain });
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

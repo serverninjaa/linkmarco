@@ -54,12 +54,16 @@ async def host_role(request: Request, host: Optional[str] = None):
 @router.get("/site", response_model=PublicSite)
 async def resolve_site(request: Request, slug: Optional[str] = None, host: Optional[str] = None):
     doc = None
+    candidate = _normalize(host or request.headers.get("host", ""))
     if slug:
         doc = await db.sites.find_one({"slug": slug, "active": True})
-    if doc is None:
-        candidate = _normalize(host or request.headers.get("host", ""))
-        if candidate:
-            doc = await db.sites.find_one({"domains": candidate, "active": True})
+    if doc is None and candidate:
+        doc = await db.sites.find_one({"domains": candidate, "active": True})
+        # Panelden aktif edilmemiş domain: tasarım/kartlar gösterilmez, "hazırlanıyor" ekranı çıkar.
+        if doc is not None:
+            active_domain = _normalize(doc.get("active_domain") or "")
+            if active_domain and active_domain != candidate:
+                return PublicSite(site=Site(**doc), slots=[], status="pending")
     if doc is None:
         doc = await db.sites.find_one({"active": True})
     if doc is None:

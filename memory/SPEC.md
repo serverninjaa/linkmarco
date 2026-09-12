@@ -260,3 +260,14 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - Nginx bunlari koke bagliyor (deploy/nginx-adcore.conf ve deploy/ssl-ads.sh icindeki 443 blogu):
   `location = /robots.txt { proxy_pass http://127.0.0.1:8001/api/public/robots.txt; proxy_set_header Host $host; }`
   aynisi /sitemap.xml icin. VPS'te mevcut nginx dosyalarina bu iki location ELDE eklenmeli (auto-update conf'u ezmez).
+
+## Aktif domain kontrolu (12 Eyl)
+- Site.active_domain (SiteBase + SiteUpdate + TS Site). BOS ise TUM domainler yayinda (geriye uyumluluk).
+  Doluysa YALNIZCA o domain siteyi yayinlar.
+- PUT /api/sites/{id} active_domain'i domain listesine gore dogrular (yoksa 422) ve www. onekini atar.
+- GET /api/public/site: host bilinen bir domain ama active_domain degilse
+  PublicSite{status:"pending", slots:[]} doner (tasarim/kart gosterilmez).
+  PublicSite modeline `status: "live"|"pending"` alani eklendi (TS PublicSite ile eslendi).
+- Portal: status=="pending" ise components/portal/DomainPendingScreen.tsx -> "Domain hazirlaniyor" ekrani.
+- Panel: site editoru > Domainler sekmesinde her satirda "Aktif Et" butonu; aktif olanda "AKTIF" etiketi.
+  Aktif domain silinirse active_domain temizlenir.

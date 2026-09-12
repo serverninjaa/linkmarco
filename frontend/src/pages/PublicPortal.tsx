@@ -6,6 +6,7 @@ import { DEFAULT_THEME } from "@/lib/types";
 import AdSlotRenderer from "@/components/portal/AdSlotRenderer";
 import WelcomePopupModal from "@/components/portal/WelcomePopupModal";
 import usePortalHead from "@/lib/usePortalHead";
+import DomainPendingScreen from "@/components/portal/DomainPendingScreen";
 
 // Mobilde de aynı kolon sayısı: sıra ve yan yana görünüm masaüstüyle birebir aynı kalır.
 const COLS: Record<number, string> = {
@@ -34,6 +35,7 @@ export default function PublicPortal() {
   const slots = isError ? [] : (data?.slots ?? []);
   const theme = site?.theme ?? DEFAULT_THEME;
   const ticker = site?.marquee?.length ? site.marquee : ["Güncel giriş adresleri 7/24 yayında"];
+  const pending = data?.status === "pending";
 
   // Sekme başlığı / Google açıklaması / favicon — panelden yönetilir (SEO sekmesi).
   usePortalHead({
@@ -42,10 +44,13 @@ export default function PublicPortal() {
     faviconUrl: site?.favicon_url || "",
   });
 
+  if (pending) {
+    return <DomainPendingScreen theme={theme} host={window.location.hostname} />;
+  }
+
   return (
     <div className="flex min-h-screen flex-col" style={{ background: theme.bg, color: theme.text }}>
-      {site?.custom_css ? <style>{site.custom_css}</style> : null}
-      {site?.popup && !isPreview ? (
+      {site?.custom_css ? <style>{site.custom_css}</style> : null}      {site?.popup && !isPreview ? (
         <WelcomePopupModal popup={site.popup} accent={theme.accent} />
       ) : null}
 
