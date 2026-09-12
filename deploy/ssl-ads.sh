@@ -42,9 +42,10 @@ echo "== Nginx 443 default_server bloğu yazılıyor"
 cat > /etc/nginx/sites-available/adcore-ads-ssl <<NGINX
 # Reklam domainleri — HTTPS. SNI panel domainine uymayan tüm istekler buraya düşer.
 server {
+    # HTTP/2'yi bilerek yazmıyoruz: Nginx 1.24'te "http2 on;" direktifi yok, listen
+    # satırındaki http2 parametresi de bazı kurulumlarda uyarı üretiyor. HTTP/1.1 yeterli.
     listen 443 ssl default_server;
     listen [::]:443 ssl default_server;
-    http2 on;
     server_name _;
 
     ssl_certificate     $CERT_DIR/fullchain.pem;
