@@ -310,3 +310,10 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - PublicPortal ust seritteki bas harf rozeti (logo_text'in ilk 2 harfi, accent renkli kare) KALDIRILDI.
   Artik tum sitelerde basta yalnizca yazi var (data-testid="portal-logo"). logo_text alani duruyor,
   sadece rozet olarak gosterilmiyor.
+
+## DNS tasima durumu (12 Eyl, son)
+- sultan5.com ve saray5.com: nameserver'lar Namecheap (dns1/dns2.registrar-servers.com),
+  A @ + www = 203.161.57.207. Cloudflare ile ILGISI KALMADI (zone'lari silindi).
+- marcopanel.site: NS hala Cloudflare (arnold/nataly.ns.cloudflare.com), kayitlar dns-only A 203.161.57.207.
+  Zone KORUNUYOR — silinirse panel domaini coker. Tasimak icin once Namecheap'te BasicDNS + A kayitlari.
+- Cloudflare hesabinda kalan tek zone: marcopanel.site. Artik test/kullanilmayan zone yok.
