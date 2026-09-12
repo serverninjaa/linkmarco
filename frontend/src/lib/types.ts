@@ -300,6 +300,8 @@ export interface DomainSslStatus {
   site_slug: string;
   resolved_ip: string;
   dns_ok: boolean;
+  www_resolved_ip: string;
+  www_dns_ok: boolean;
   cert_ok: boolean;
   ready: boolean;
   issue: string;

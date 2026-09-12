@@ -30,6 +30,8 @@ class DomainSslStatus(BaseModel):
     site_slug: str
     resolved_ip: str = ""
     dns_ok: bool = False
+    www_resolved_ip: str = ""
+    www_dns_ok: bool = False
     cert_ok: bool = False
     ready: bool = False
     issue: str = ""
@@ -129,15 +131,22 @@ async def ssl_status():
         if panel_domain and domain == panel_domain:
             continue  # panel domaini kendi sertifikasını kullanır
         ip = await _resolve_live(domain)
+        www_ip = await _resolve_live(f"www.{domain}")
         dns_ok = bool(server_ip) and ip == server_ip
+        www_dns_ok = bool(server_ip) and www_ip == server_ip
         cert_ok = domain in certs
         issue = ""
         if not server_ip:
-            issue = "Sunucu IP tanımlı değil — Cloudflare / DNS sayfasında sunucu IP'sini kaydedin"
+            issue = "Sunucu IP tanımlı değil — Domainler & SSL sayfasında sunucu IP'sini kaydedin"
         elif not ip:
             issue = "DNS kaydı bulunamadı — kayıt firmasında A kaydı ekleyin"
         elif not dns_ok:
             issue = f"DNS {ip} adresine bakıyor, beklenen {server_ip}"
+        elif not www_dns_ok:
+            issue = (
+                f"www kaydı eksik/yanlış ({www_ip or 'yok'}) — kayıt firmasında "
+                f"`A · www · {server_ip}` ekleyin"
+            )
         elif not cert_ok:
             issue = "Sertifika yok — 'Sertifika al & yayına al'a basın"
         rows.append(
@@ -146,8 +155,10 @@ async def ssl_status():
                 site_slug=slug,
                 resolved_ip=ip,
                 dns_ok=dns_ok,
+                www_resolved_ip=www_ip,
+                www_dns_ok=www_dns_ok,
                 cert_ok=cert_ok,
-                ready=dns_ok and cert_ok,
+                ready=dns_ok and www_dns_ok and cert_ok,
                 issue=issue,
             )
         )

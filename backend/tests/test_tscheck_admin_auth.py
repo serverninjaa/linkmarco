@@ -7,7 +7,7 @@ from tests.conftest import api_url
 
 def test_login_success_and_session_cookie():
     with httpx.Client() as c:
-        resp = c.post(api_url("/auth/login"), json={"username": "admin", "password": "admin123"})
+        resp = c.post(api_url("/auth/login"), json={"username": "admin", "password": "1727Fd40."})
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["username"] == "admin"
@@ -21,7 +21,7 @@ def test_sites_requires_auth_and_works_with_cookie():
         assert resp.status_code == 401, resp.text
 
         # Login then access with cookie
-        login = c.post(api_url("/auth/login"), json={"username": "admin", "password": "admin123"})
+        login = c.post(api_url("/auth/login"), json={"username": "admin", "password": "1727Fd40."})
         assert login.status_code == 200
         resp2 = c.get(api_url("/sites"))
         assert resp2.status_code == 200, resp2.text

@@ -31,7 +31,7 @@ SERVER_IP = "203.161.57.207"
 
 def _login() -> httpx.Client:
     c = httpx.Client(timeout=30.0)
-    resp = c.post(api_url("/auth/login"), json={"username": "admin", "password": "admin123"})
+    resp = c.post(api_url("/auth/login"), json={"username": "admin", "password": "1727Fd40."})
     assert resp.status_code == 200, resp.text
     return c
 

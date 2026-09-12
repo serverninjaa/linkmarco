@@ -89,11 +89,13 @@ export default function SslPanel({ enabled }: { enabled: boolean }) {
                 <p className="font-mono text-sm text-cyan-300">{d.domain}</p>
                 <p className="text-[11px] text-slate-500">
                   {d.site_slug ? `site: ${d.site_slug} · ` : ""}
-                  {d.resolved_ip ? `DNS: ${d.resolved_ip}` : "DNS: yok"}
+                  {d.resolved_ip ? `kök: ${d.resolved_ip}` : "kök: yok"} ·{" "}
+                  {d.www_resolved_ip ? `www: ${d.www_resolved_ip}` : "www: yok"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge ok={d.dns_ok} label="DNS" testid={`ssl-dns-${d.domain}`} />
+                <Badge ok={d.dns_ok} label="KÖK" testid={`ssl-dns-${d.domain}`} />
+                <Badge ok={d.www_dns_ok} label="WWW" testid={`ssl-www-${d.domain}`} />
                 <Badge ok={d.cert_ok} label="SSL" testid={`ssl-cert-${d.domain}`} />
                 {d.ready ? (
                   <span
