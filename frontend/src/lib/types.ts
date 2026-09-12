@@ -285,6 +285,7 @@ export interface CfSslSettings {
   zone_id: string;
   ssl: string;
   always_use_https: boolean;
+  ipv6: boolean;
 }
 
 // backend/routers/public.py → HostRole ile 1:1

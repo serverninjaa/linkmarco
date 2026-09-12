@@ -212,6 +212,16 @@ export default function AdminCloudflare() {
               Kayıtlı IP: <code className="font-mono text-cyan-300">{statusQ.data.server_ip}</code>
             </p>
           )}
+          {serverIp.trim() && !/^\d{1,3}(\.\d{1,3}){3}$/.test(serverIp.trim()) && (
+            <p className="mt-2 text-xs text-rose-400" data-testid="cf-ip-invalid-hint">
+              Geçerli bir IPv4 adresi girin (örn. 203.161.57.207)
+            </p>
+          )}
+          {!statusQ.data?.server_ip && !statusQ.isLoading && (
+            <p className="mt-2 text-xs text-amber-400" data-testid="cf-ip-missing-warning">
+              Sunucu IP'si kayıtlı değil — domain bağlama (A kaydı yazma) çalışmaz.
+            </p>
+          )}
           <button
             className={`${ghost} mt-4`}
             onClick={() => autoPurge.mutate(!(statusQ.data?.auto_purge ?? true))}

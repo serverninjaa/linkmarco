@@ -1,6 +1,7 @@
 """Cloudflare / DNS yönetimi — zone listeleme & ekleme, A/CNAME kayıt CRUD, otomatik bağlama."""
 
 import asyncio
+import ipaddress
 import socket
 from typing import List, Literal, Optional
 
@@ -32,7 +33,6 @@ class CfStatus(BaseModel):
 
 class CfSettingsUpdate(BaseModel):
     server_ip: str = Field(default="", max_length=64)
-
 
 class CfZone(BaseModel):
     id: str
@@ -90,11 +90,13 @@ class CfSslSettings(BaseModel):
     zone_id: str
     ssl: str = "off"
     always_use_https: bool = False
+    ipv6: bool = False
 
 
 class CfSslUpdate(BaseModel):
     ssl: Optional[Literal["off", "flexible", "full", "strict"]] = None
     always_use_https: Optional[bool] = None
+    ipv6: Optional[bool] = None
 
 
 class CfAutoPurgeUpdate(BaseModel):
@@ -125,6 +127,14 @@ class CfAutowireResult(BaseModel):
 async def get_settings() -> dict:
     doc = await db.settings.find_one({"id": SETTINGS_ID})
     return doc or {"id": SETTINGS_ID, "server_ip": ""}
+
+
+def valid_ipv4(value: str) -> bool:
+    try:
+        ipaddress.IPv4Address(value.strip())
+        return True
+    except ValueError:
+        return False
 
 
 async def call(method: str, path: str, **kwargs) -> dict:
@@ -239,8 +249,14 @@ async def status():
 
 @router.put("/settings", response_model=CfStatus)
 async def update_settings(payload: CfSettingsUpdate):
+    server_ip = payload.server_ip.strip()
+    if server_ip and not valid_ipv4(server_ip):
+        raise HTTPException(
+            status_code=400,
+            detail=f"'{server_ip}' geçerli bir IPv4 adresi değil (örn. 203.161.57.207)",
+        )
     await db.settings.update_one(
-        {"id": SETTINGS_ID}, {"$set": {"server_ip": payload.server_ip.strip()}}, upsert=True
+        {"id": SETTINGS_ID}, {"$set": {"server_ip": server_ip}}, upsert=True
     )
     return await status()
 
@@ -304,7 +320,18 @@ async def autowire(payload: CfAutowireRequest):
     settings = await get_settings()
     server_ip = (payload.server_ip or settings.get("server_ip") or "").strip()
     if not server_ip:
-        raise HTTPException(status_code=400, detail="Önce sunucu IP adresini kaydedin")
+        raise HTTPException(
+            status_code=400,
+            detail="Önce 'Sunucu IP adresi' alanına sunucunun IPv4 adresini kaydedin",
+        )
+    if not valid_ipv4(server_ip):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Kayıtlı sunucu IP'si geçersiz: '{server_ip}'. "
+                "Sunucu IP adresi alanına geçerli bir IPv4 yazın (örn. 203.161.57.207)."
+            ),
+        )
     domain = payload.domain.strip().lower().removeprefix("www.")
 
     body = await call("GET", "/zones", params={"name": domain, "per_page": 5})
@@ -329,6 +356,13 @@ async def autowire(payload: CfAutowireRequest):
                 await call("DELETE", f"/zones/{zone.id}/dns_records/{extra.id}")
         else:
             out.append(await create_record(zone.id, desired))
+
+    # IPv6 edge'i bazı zone'larda 1034 (Edge IP Restricted) veriyor; origin yalnızca IPv4
+    # dinlediği için AAAA yayınlamak gereksiz. Best-effort kapat, hata olursa yoksay.
+    try:
+        await cf_request("PATCH", f"/zones/{zone.id}/settings/ipv6", json={"value": "off"})
+    except CloudflareError:
+        pass
 
     if payload.site_id:
         site = await db.sites.find_one({"id": payload.site_id})
@@ -499,10 +533,12 @@ async def purge_cache(zone_id: str):
 async def get_ssl(zone_id: str):
     ssl_body = await call("GET", f"/zones/{zone_id}/settings/ssl")
     https_body = await call("GET", f"/zones/{zone_id}/settings/always_use_https")
+    ipv6_body = await call("GET", f"/zones/{zone_id}/settings/ipv6")
     return CfSslSettings(
         zone_id=zone_id,
         ssl=str((ssl_body.get("result") or {}).get("value", "off")),
         always_use_https=(https_body.get("result") or {}).get("value") == "on",
+        ipv6=(ipv6_body.get("result") or {}).get("value") == "on",
     )
 
 
@@ -515,5 +551,11 @@ async def update_ssl(zone_id: str, payload: CfSslUpdate):
             "PATCH",
             f"/zones/{zone_id}/settings/always_use_https",
             json={"value": "on" if payload.always_use_https else "off"},
+        )
+    if payload.ipv6 is not None:
+        await call(
+            "PATCH",
+            f"/zones/{zone_id}/settings/ipv6",
+            json={"value": "on" if payload.ipv6 else "off"},
         )
     return await get_ssl(zone_id)

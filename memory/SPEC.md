@@ -156,3 +156,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - lib/cloudflare.py: credentials() -> Global API Key (CLOUDFLARE_EMAIL + CLOUDFLARE_API_KEY, X-Auth-* basliklari) varsa onu kullanir; yoksa CLOUDFLARE_API_TOKEN (Bearer).
 - Global Key tum izinlere sahiptir (purge + zone create); token ile purge icin Zone:Cache Purge izni gerekir.
 - status ucunda Global Key kullanilirken /user/tokens/verify yerine /zones ile dogrulama yapilir (token_status = "active (global key)").
+
+### IPv6 / zone ayarlari
+- autowire artik zone icin IPv6 Compatibility = off yapar (best-effort): bazi aglarda IPv6 edge 1034 Edge IP Restricted veriyordu, origin yalnizca IPv4 dinliyor.
+- GET/PUT /api/cloudflare/zones/{id}/ssl artik ipv6 alanini da tasir; panelde SSL & Onbellek bolumunde IPv6 AC/KAPA dugmesi var.
+- Reklam domainlerinde SSL modu flexible onerilir (origin sertifikasi yok).

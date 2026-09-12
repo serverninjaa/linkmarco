@@ -129,11 +129,11 @@ export function ZoneSslPanel({ zones }: { zones: CfZone[] }) {
   });
 
   const save = useMutation({
-    mutationFn: (patch: { ssl?: string; always_use_https?: boolean }) =>
+    mutationFn: (patch: { ssl?: string; always_use_https?: boolean; ipv6?: boolean }) =>
       apiPut<CfSslSettings>(`/cloudflare/zones/${active}/ssl`, patch),
     onSuccess: (s) => {
       qc.setQueryData(["cf-ssl", active], s);
-      toast.success("SSL ayarı güncellendi");
+      toast.success("Ayar güncellendi");
     },
     onError: (e) => toast.error(errText(e)),
   });
@@ -194,6 +194,19 @@ export function ZoneSslPanel({ zones }: { zones: CfZone[] }) {
               Always Use HTTPS:{" "}
               <span className={sslQ.data?.always_use_https ? "text-emerald-400" : "text-slate-500"}>
                 {sslQ.data?.always_use_https ? "AÇIK" : "KAPALI"}
+              </span>
+            </button>
+
+            <button
+              className={ghost}
+              onClick={() => save.mutate({ ipv6: !(sslQ.data?.ipv6 ?? false) })}
+              disabled={!sslQ.data || save.isPending}
+              title="IPv6 açıkken bazı ağlarda Cloudflare 1034 hatası verebilir"
+              data-testid="cf-ipv6-toggle"
+            >
+              IPv6:{" "}
+              <span className={sslQ.data?.ipv6 ? "text-emerald-400" : "text-slate-500"}>
+                {sslQ.data?.ipv6 ? "AÇIK" : "KAPALI"}
               </span>
             </button>
 
