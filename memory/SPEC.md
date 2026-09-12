@@ -249,3 +249,14 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   @ ve www A kaydi = server_ip, proxied=FALSE, ttl=120; settings.tunnel_id temizlenir (tunel modundan cikis).
   Yanit ssl_command ile `bash /opt/adcore/deploy/ssl-ads.sh <domainler>` komutunu verir.
 - Panelde Cloudflare/DNS sayfasindaki karttan "Doğrudan sunucuya bağla (önerilen)" butonu.
+
+## Favicon bolumu + robots/sitemap (12 Eyl)
+- Hazir faviconlar: frontend/public/favicons/{crown,dice,flame,diamond,star,ball,shield,bolt}.svg
+  (statik servis, /favicons/x.svg). Secici: frontend/src/components/admin/FaviconPicker.tsx
+  — hazir ikon grid'i + "kendi ikonumu yukle" (LogoPickerDialog) + Kaldir. Site editoru SEO sekmesinde.
+- robots.txt / sitemap.xml Host basligina gore backend'de uretilir (routers/public.py):
+  GET /api/public/robots.txt  -> panel domaini icin "Disallow: /", reklam domainleri icin Allow + Sitemap satiri
+  GET /api/public/sitemap.xml -> o domainin sitesi yayindaysa tek URL'lik sitemap, panel domaini/bilinmeyen domain 404
+- Nginx bunlari koke bagliyor (deploy/nginx-adcore.conf ve deploy/ssl-ads.sh icindeki 443 blogu):
+  `location = /robots.txt { proxy_pass http://127.0.0.1:8001/api/public/robots.txt; proxy_set_header Host $host; }`
+  aynisi /sitemap.xml icin. VPS'te mevcut nginx dosyalarina bu iki location ELDE eklenmeli (auto-update conf'u ezmez).

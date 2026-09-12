@@ -3,7 +3,8 @@
 import os
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from lib.dates import now_tz
@@ -68,6 +69,55 @@ async def resolve_site(request: Request, slug: Optional[str] = None, host: Optio
         await db.ad_slots.find({"site_id": site.id, "active": True}).sort("order", 1).to_list(500)
     )
     return PublicSite(site=site, slots=[AdSlot(**s) for s in slot_docs])
+
+
+@router.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt(request: Request, host: Optional[str] = None):
+    """Host'a göre robots.txt: panel domaini tamamen kapalı, reklam domainleri açık."""
+    candidate = _normalize(host or request.headers.get("host", ""))
+    panel_domain = _normalize(os.environ.get("PANEL_DOMAIN", ""))
+    if panel_domain and candidate == panel_domain:
+        return PlainTextResponse("User-agent: *\nDisallow: /\n")
+    base = f"https://{candidate}" if candidate else ""
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin",
+        "Disallow: /api/",
+    ]
+    if base:
+        lines.append(f"Sitemap: {base}/sitemap.xml")
+    return PlainTextResponse("\n".join(lines) + "\n")
+
+
+@router.get("/sitemap.xml")
+async def sitemap_xml(request: Request, host: Optional[str] = None):
+    """Host'a göre sitemap: o domainin sitesi ve reklam kartlarının hedefleri değil, sayfaları listelenir."""
+    candidate = _normalize(host or request.headers.get("host", ""))
+    panel_domain = _normalize(os.environ.get("PANEL_DOMAIN", ""))
+    if panel_domain and candidate == panel_domain:
+        raise HTTPException(status_code=404, detail="Panel domaini için sitemap üretilmez")
+
+    doc = None
+    if candidate:
+        doc = await db.sites.find_one({"domains": candidate, "active": True})
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Bu domain için yayında site yok")
+
+    base = f"https://{candidate}"
+    updated = (doc.get("created_at") or now_tz())
+    lastmod = updated.strftime("%Y-%m-%d") if hasattr(updated, "strftime") else str(updated)[:10]
+    urls = "".join(
+        f"<url><loc>{base}{path}</loc><lastmod>{lastmod}</lastmod>"
+        f"<changefreq>daily</changefreq><priority>{priority}</priority></url>"
+        for path, priority in (("/", "1.0"),)
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{urls}</urlset>"
+    )
+    return Response(content=xml, media_type="application/xml")
 
 
 @router.post("/slots/{slot_id}/click")

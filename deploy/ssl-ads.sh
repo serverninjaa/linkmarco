@@ -67,6 +67,11 @@ server {
     }
 
     location /admin { return 404; }               # panel reklam domainlerinde kapalı
+
+    # Arama motoru dosyaları: backend Host başlığına göre üretir.
+    location = /robots.txt  { proxy_pass http://127.0.0.1:8001/api/public/robots.txt;  proxy_set_header Host \$host; }
+    location = /sitemap.xml { proxy_pass http://127.0.0.1:8001/api/public/sitemap.xml; proxy_set_header Host \$host; }
+
     location / { try_files \$uri \$uri/ /index.html; }
 }
 NGINX

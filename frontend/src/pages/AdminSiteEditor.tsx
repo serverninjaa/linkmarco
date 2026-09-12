@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, ExternalLink, ChevronUp, ChevronDown, X, GripVertical, Pencil, ShieldAlert, Link2, Loader2 } from "lucide-react";
 import LogoPickerDialog from "@/components/admin/LogoPickerDialog";
+import FaviconPicker from "@/components/admin/FaviconPicker";
 import SiteStatsPanel from "@/components/admin/SiteStatsPanel";
 import LiveSitePreview from "@/components/admin/LiveSitePreview";
 
@@ -274,13 +275,32 @@ export default function AdminSiteEditor() {
                 {draft.seo_description.length} karakter
               </span>
             </Field>
-            <Field label="Sekme İkonu / Favicon (kütüphaneden seç veya yükle)" id="f-favicon">
-              <LogoPickerDialog
-                value={draft.favicon_url}
-                onChange={(url) => set("favicon_url", url)}
-                testId="field-favicon"
-              />
+            <Field label="Sekme İkonu / Favicon" id="f-favicon">
+              <FaviconPicker value={draft.favicon_url} onChange={(url) => set("favicon_url", url)} />
             </Field>
+
+            {/* robots.txt / sitemap.xml — otomatik üretiliyor */}
+            <div
+              className="rounded-xl border border-[#1E293B] bg-[#0B0E17] p-4"
+              data-testid="seo-robots-block"
+            >
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Arama motoru dosyaları (otomatik)
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                Her domain için <span className="text-slate-200">robots.txt</span> ve{" "}
+                <span className="text-slate-200">sitemap.xml</span> sunucu tarafında otomatik
+                üretilir — panel domaini aramaya kapalı, reklam domainleri açıktır.
+              </p>
+              <div className="mt-2 space-y-1 font-mono text-[11px] text-cyan-300">
+                <p data-testid="seo-robots-url">
+                  https://{draft.domains[0] ?? `${draft.slug}.com`}/robots.txt
+                </p>
+                <p data-testid="seo-sitemap-url">
+                  https://{draft.domains[0] ?? `${draft.slug}.com`}/sitemap.xml
+                </p>
+              </div>
+            </div>
 
             {/* Google sonucu önizlemesi */}
             <div
