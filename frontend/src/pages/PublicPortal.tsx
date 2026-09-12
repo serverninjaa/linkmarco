@@ -61,12 +61,7 @@ export default function PublicPortal() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex shrink-0 items-center gap-2.5">
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded font-heading text-xs font-black"
-              style={{ background: theme.accent, color: "#000" }}
-            >
-              {(site?.logo_text ?? "AD").slice(0, 2)}
-            </span>
+            {/* Baş harf rozeti kaldırıldı — başlıkta yalnızca yazı kalsın (tüm siteler için). */}
             <span className="font-heading text-lg font-black uppercase tracking-tight" data-testid="portal-logo">
               {site?.logo_text || "REKLAM PORTALI"}
             </span>

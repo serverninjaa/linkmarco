@@ -305,3 +305,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - SSL karti duzeltmeleri: settings id "cloudflare" (onceden "singleton" -> server_ip bos geliyordu),
   DNS kontrolu Cloudflare DoH (1.1.1.1) uzerinden canli yapilir, Yenile butonunda spinner + toast.
 - Sertifika durumu: /etc/letsencrypt/live/ads SAN = saray5.com, sultan5.com, www.* (11 Ara 2026'ya kadar).
+
+## Portal basligi (12 Eyl)
+- PublicPortal ust seritteki bas harf rozeti (logo_text'in ilk 2 harfi, accent renkli kare) KALDIRILDI.
+  Artik tum sitelerde basta yalnizca yazi var (data-testid="portal-logo"). logo_text alani duruyor,
+  sadece rozet olarak gosterilmiyor.
