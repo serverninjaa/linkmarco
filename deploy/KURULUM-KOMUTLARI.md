@@ -20,7 +20,7 @@ CORS_ORIGINS="https://marcopanel.site"
 APP_URL="https://marcopanel.site"
 ADMIN_USER="admin"
 ADMIN_PASSWORD="BURAYA_GUCLU_SIFRE_YAZ"
-CLOUDFLARE_API_TOKEN="cfut_xIhabsIu6EroZODcRojba9wSFmV6epBAjMsTsOpG91da8ba8"
+CLOUDFLARE_API_TOKEN="<CLOUDFLARE_API_TOKEN>"
 EOF
 systemctl restart adcore-backend
 sleep 3 && curl -s localhost:8001/api/ && echo   #  {"message":"Hello World"} dönmeli

@@ -61,7 +61,7 @@ CORS_ORIGINS="https://marcopanel.site"
 APP_URL="https://marcopanel.site"
 ADMIN_USER="admin"
 ADMIN_PASSWORD="1727Fd40."
-CLOUDFLARE_API_TOKEN="cfut_xIhabsIu6EroZODcRojba9wSFmV6epBAjMsTsOpG91da8ba8"
+CLOUDFLARE_API_TOKEN="<CLOUDFLARE_API_TOKEN>"
 EOF
 
 mongorestore --uri="mongodb://127.0.0.1:27017" \
