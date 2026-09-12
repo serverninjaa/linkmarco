@@ -92,6 +92,10 @@ def test_autowire_succeeds_once_valid_ip_saved_and_disables_ipv6(logged_in):
     assert ssl.json().get("ipv6") is False, ssl.json()
 
 
+@pytest.mark.skip(
+    reason="CANLI zone: sultan5.com uretimde kullaniliyor; IPv6'yi acip kapatmak siteyi "
+    "1034 hatasina dusuruyor. Toggle akisi panelden manuel dogrulanir."
+)
 def test_ssl_ipv6_panel_toggle_roundtrip(logged_in):
     c = logged_in
     get_resp = c.get(api_url(f"/cloudflare/zones/{ZONE_SULTAN5}/ssl"))

@@ -161,3 +161,8 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - autowire artik zone icin IPv6 Compatibility = off yapar (best-effort): bazi aglarda IPv6 edge 1034 Edge IP Restricted veriyordu, origin yalnizca IPv4 dinliyor.
 - GET/PUT /api/cloudflare/zones/{id}/ssl artik ipv6 alanini da tasir; panelde SSL & Onbellek bolumunde IPv6 AC/KAPA dugmesi var.
 - Reklam domainlerinde SSL modu flexible onerilir (origin sertifikasi yok).
+
+## !! CANLI KAYNAKLAR — TESTLER DOKUNMAMALI
+- Cloudflare zone `marcopanel.site` = CANLI yonetim paneli domaini (sunucu 203.161.57.207). DNS/SSL/IPv6 ayarlari degistirilmemeli.
+- Cloudflare zone `sultan5.com` = CANLI reklam domaini. Dogru ayarlar: ssl=flexible, ssl_automatic_mode=custom, ipv6=off. Full/strict veya ipv6=on yapilirsa site 526/1034 verir.
+- Backend testleri bu zone ayarlarini degistirmemeli; degistiriyorsa test sonunda mutlaka yukaridaki degerlere geri almalidir.
