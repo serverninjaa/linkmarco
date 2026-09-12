@@ -357,12 +357,21 @@ async def autowire(payload: CfAutowireRequest):
         else:
             out.append(await create_record(zone.id, desired))
 
-    # IPv6 edge'i bazı zone'larda 1034 (Edge IP Restricted) veriyor; origin yalnızca IPv4
-    # dinlediği için AAAA yayınlamak gereksiz. Best-effort kapat, hata olursa yoksay.
-    try:
-        await cf_request("PATCH", f"/zones/{zone.id}/settings/ipv6", json={"value": "off"})
-    except CloudflareError:
-        pass
+    # Yeni bağlanan domain için güvenli varsayılanlar (best-effort, hata olursa yoksay):
+    #  - IPv6 kapalı: bazı ağlarda IPv6 edge 1034 (Edge IP Restricted) veriyor, origin IPv4.
+    #  - Automatic SSL/TLS kapalı + Flexible: origin'de bu domaine ait sertifika yok, aksi
+    #    halde Cloudflare zone'u kendiliğinden Full (strict)'e çevirip 526 üretiyor.
+    for setting, value in (
+        ("ipv6", "off"),
+        ("ssl_automatic_mode", "custom"),
+        ("ssl", "flexible"),
+    ):
+        try:
+            await cf_request(
+                "PATCH", f"/zones/{zone.id}/settings/{setting}", json={"value": value}
+            )
+        except CloudflareError:
+            pass
 
     if payload.site_id:
         site = await db.sites.find_one({"id": payload.site_id})
