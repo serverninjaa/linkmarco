@@ -11,6 +11,7 @@ from models.schemas import (
     AdSlot,
     DesignTemplate,
     DesignTemplateCreate,
+    DesignTemplateRefresh,
     DesignTemplateSnapshot,
     DesignTemplateUpdate,
     Site,
@@ -105,6 +106,34 @@ async def delete_template(template_id: str):
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Şablon bulunamadı")
     return {"ok": True}
+
+
+@router.post("/{template_id}/refresh", response_model=DesignTemplate)
+async def refresh_template(template_id: str, payload: DesignTemplateRefresh):
+    """'Şablonu güncelle': seçilen sitenin GÜNCEL tasarımını şablonun üzerine yazar."""
+    doc = await db.design_templates.find_one({"id": template_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Şablon bulunamadı")
+    site = await db.sites.find_one({"id": payload.source_site_id})
+    if not site:
+        raise HTTPException(status_code=404, detail="Kaynak site bulunamadı")
+
+    slots = await db.ad_slots.find({"site_id": site["id"]}).sort("order", 1).to_list(500)
+    snapshot = _snapshot_from_site(site, slots if payload.include_slots else [])
+    await db.design_templates.update_one(
+        {"id": template_id},
+        {
+            "$set": {
+                "snapshot": snapshot.model_dump(),
+                "source_site_slug": site.get("slug", ""),
+                "preview_image_url": site.get("hero_image_url", "") or doc.get(
+                    "preview_image_url", ""
+                ),
+            }
+        },
+    )
+    fresh = await db.design_templates.find_one({"id": template_id})
+    return DesignTemplate(**fresh)  # type: ignore[arg-type]
 
 
 @router.post("/{template_id}/create-site", response_model=Site, status_code=201)

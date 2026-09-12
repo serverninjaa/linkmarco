@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AdminShell from "@/components/admin/AdminShell";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
 import type { DesignTemplate, Site } from "@/lib/types";
-import { Layers, Plus, Trash2, Wand2, X } from "lucide-react";
+import { Layers, Plus, RefreshCw, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 
 const btn =
@@ -24,6 +24,7 @@ export default function AdminTemplates() {
   const navigate = useNavigate();
   const [saveOpen, setSaveOpen] = useState(false);
   const [useTemplate, setUseTemplate] = useState<DesignTemplate | null>(null);
+  const [refreshTemplate, setRefreshTemplate] = useState<DesignTemplate | null>(null);
 
   const templatesQ = useQuery({
     queryKey: ["templates"],
@@ -41,6 +42,8 @@ export default function AdminTemplates() {
   });
 
   const templates = templatesQ.data ?? [];
+  const sites = sitesQ.data ?? [];
+  const siteSlugs = new Set(sites.map((s) => s.slug));
 
   return (
     <AdminShell>
@@ -83,24 +86,7 @@ export default function AdminTemplates() {
               onClick={() => setUseTemplate(t)}
               className="group cursor-pointer overflow-hidden rounded-2xl border border-[#1E293B] bg-[#0F1320]/80 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.9)] transition-[transform,border-color] duration-200 hover:-translate-y-1 hover:border-amber-500/60"
             >
-              <div
-                className="relative h-28 border-b border-[#1E293B]"
-                style={{
-                  background: `linear-gradient(120deg, ${t.snapshot.theme.bg} 0%, ${t.snapshot.theme.panel} 55%, ${t.snapshot.theme.accent}33 100%)`,
-                }}
-              >
-                <div className="absolute inset-x-4 bottom-3 flex gap-1.5">
-                  {[t.snapshot.theme.accent, t.snapshot.theme.accent2, t.snapshot.theme.card].map(
-                    (c, i) => (
-                      <span
-                        key={`${t.id}-sw-${i}`}
-                        className="h-2.5 w-8 rounded-full"
-                        style={{ background: c }}
-                      />
-                    ),
-                  )}
-                </div>
-              </div>
+              <TemplateThumb template={t} live={siteSlugs.has(t.source_site_slug)} />
               <div className="p-4">
                 <h2
                   className="font-heading text-base font-bold text-slate-100"
@@ -120,6 +106,18 @@ export default function AdminTemplates() {
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <Wand2 className="h-3.5 w-3.5" /> Bu tasarımla site oluştur
                   </span>
+                  <div className="flex items-center gap-1">
+                  <button
+                    className="rounded-lg p-1.5 text-slate-500 transition-colors duration-150 hover:bg-amber-500/10 hover:text-amber-400"
+                    title="Şablonu bir sitenin güncel tasarımıyla güncelle"
+                    data-testid={`template-refresh-${t.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRefreshTemplate(t);
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
                   <button
                     className="rounded-lg p-1.5 text-slate-500 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400"
                     data-testid={`template-delete-${t.id}`}
@@ -130,6 +128,7 @@ export default function AdminTemplates() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  </div>
                 </div>
               </div>
             </article>
@@ -139,10 +138,22 @@ export default function AdminTemplates() {
 
       {saveOpen ? (
         <SaveTemplateDialog
-          sites={sitesQ.data ?? []}
+          sites={sites}
           onClose={() => setSaveOpen(false)}
           onSaved={() => {
             setSaveOpen(false);
+            void qc.invalidateQueries({ queryKey: ["templates"] });
+          }}
+        />
+      ) : null}
+
+      {refreshTemplate ? (
+        <RefreshTemplateDialog
+          template={refreshTemplate}
+          sites={sites}
+          onClose={() => setRefreshTemplate(null)}
+          onDone={() => {
+            setRefreshTemplate(null);
             void qc.invalidateQueries({ queryKey: ["templates"] });
           }}
         />
@@ -161,6 +172,55 @@ export default function AdminTemplates() {
         />
       ) : null}
     </AdminShell>
+  );
+}
+
+/** Şablon kartı görseli: kaynak site hâlâ varsa GERÇEK site sayfasını küçültüp gösterir,
+ *  yoksa şablonun tema renklerinden minyatür bir düzen çizer. */
+function TemplateThumb({ template, live }: { template: DesignTemplate; live: boolean }) {
+  const { theme, columns } = template.snapshot;
+  if (live) {
+    return (
+      <div
+        className="relative h-36 overflow-hidden border-b border-[#1E293B]"
+        data-testid={`template-thumb-live-${template.id}`}
+      >
+        <iframe
+          src={`/?site=${encodeURIComponent(template.source_site_slug)}&preview=1`}
+          title={`${template.name} önizleme`}
+          loading="lazy"
+          tabIndex={-1}
+          className="pointer-events-none absolute left-0 top-0 origin-top-left border-0"
+          style={{ width: 1280, height: 900, transform: "scale(0.32)" }}
+        />
+        <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+          canlı
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="relative h-36 border-b border-[#1E293B] p-3"
+      data-testid={`template-thumb-mock-${template.id}`}
+      style={{
+        background: `linear-gradient(120deg, ${theme.bg} 0%, ${theme.panel} 55%, ${theme.accent}33 100%)`,
+      }}
+    >
+      <div className="h-3 w-20 rounded-full" style={{ background: theme.accent }} />
+      <div
+        className="mt-3 grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.min(columns, 6))}, 1fr)` }}
+      >
+        {Array.from({ length: Math.max(1, Math.min(columns, 6)) * 2 }).map((_, i) => (
+          <div
+            key={`${template.id}-mini-${i}`}
+            className="h-8 rounded"
+            style={{ background: theme.card, borderBottom: `2px solid ${theme.accent2}` }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -280,6 +340,83 @@ function SaveTemplateDialog({
           data-testid="template-save-submit-button"
         >
           Şablonu kaydet
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function RefreshTemplateDialog({
+  template,
+  sites,
+  onClose,
+  onDone,
+}: {
+  template: DesignTemplate;
+  sites: Site[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const match = sites.find((s) => s.slug === template.source_site_slug);
+  const [siteId, setSiteId] = useState(match?.id ?? sites[0]?.id ?? "");
+  const [includeSlots, setIncludeSlots] = useState(true);
+
+  const refresh = useMutation({
+    mutationFn: () =>
+      apiPost<DesignTemplate>(`/templates/${template.id}/refresh`, {
+        source_site_id: siteId,
+        include_slots: includeSlots,
+      }),
+    onSuccess: (t) => {
+      toast.success(`"${t.name}" şablonu güncellendi`);
+      onDone();
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+
+  return (
+    <Modal
+      title={`"${template.name}" şablonunu güncelle`}
+      onClose={onClose}
+      testid="template-refresh-dialog"
+    >
+      <div className="space-y-3">
+        <p className="text-xs leading-relaxed text-slate-400">
+          Seçtiğiniz sitenin <span className="text-slate-200">şu anki</span> tasarımı şablonun üzerine
+          yazılır. Daha önce bu şablonla açılmış siteler etkilenmez.
+        </p>
+        <label className="block text-xs text-slate-400">
+          Kaynak site
+          <select
+            className={`${input} mt-1`}
+            value={siteId}
+            onChange={(e) => setSiteId(e.target.value)}
+            data-testid="template-refresh-site-select"
+          >
+            {sites.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.slug})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-xs text-slate-300">
+          <input
+            type="checkbox"
+            checked={includeSlots}
+            onChange={(e) => setIncludeSlots(e.target.checked)}
+            data-testid="template-refresh-include-slots"
+          />
+          Reklam kartlarını da güncelle
+        </label>
+        <button
+          className={`${btn} w-full justify-center`}
+          disabled={!siteId || refresh.isPending}
+          onClick={() => refresh.mutate()}
+          data-testid="template-refresh-submit-button"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${refresh.isPending ? "animate-spin" : ""}`} /> Şablonu
+          güncelle
         </button>
       </div>
     </Modal>

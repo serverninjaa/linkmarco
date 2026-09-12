@@ -225,3 +225,12 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   Kart grid'i; karta tiklayinca "Bu tasarimla site olustur" diyalogu (slug/isim/domainler/kartlari kopyala),
   olusturunca dogrudan site editorune yonlendirir. "Siteden sablon kaydet" butonu ile mevcut siteden sablon alinir.
 - Not: sites.py'daki eski `is_default` mantigi (tek varsayilan site) korundu; yeni sablon sistemi ondan bagimsiz.
+
+### Sablon onizleme + guncelleme (12 Eyl)
+- Kart gorseli: TemplateThumb — kaynak site (source_site_slug) hala varsa GERCEK sayfayi
+  iframe `/?site=<slug>&preview=1` ile 0.32 olcekte gosterir (pointer-events:none, "CANLI" etiketi);
+  site silinmisse tema renklerinden minyatur grid cizer.
+- POST /api/templates/{id}/refresh {source_site_id, include_slots} -> secilen sitenin GUNCEL tasarimini
+  snapshot'in uzerine yazar (source_site_slug + preview_image_url da guncellenir). Daha once o sablonla
+  olusturulmus siteler etkilenmez. UI: kart uzerindeki dairesel yenile ikonu -> template-refresh-dialog.
+- harem5.com Cloudflare'den TAMAMEN silindi (zone delete). Kalan zone'lar: marcopanel.site, sultan5.com.

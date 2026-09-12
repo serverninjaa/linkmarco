@@ -189,6 +189,13 @@ class DesignTemplateCreate(BaseModel):
     include_slots: bool = True
 
 
+class DesignTemplateRefresh(BaseModel):
+    """Şablonu, seçilen sitenin güncel tasarımıyla yeniler."""
+
+    source_site_id: str
+    include_slots: bool = True
+
+
 class DesignTemplateUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None

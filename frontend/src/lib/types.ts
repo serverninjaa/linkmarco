@@ -277,6 +277,11 @@ export interface DesignTemplateCreate {
   include_slots?: boolean;
 }
 
+export interface DesignTemplateRefresh {
+  source_site_id: string;
+  include_slots?: boolean;
+}
+
 export interface TemplateSiteCreate {
   slug: string;
   name?: string;
