@@ -194,3 +194,21 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   otomatik koruyor (yoksa panelde sonsuz redirect olur).
 - 12 Eyl: kullanici butona bastigi icin tunel 3ca29d12 silindi, yerine 11aba424-2562-4c14-b74b-f7a403ef5466 kuruldu;
   tum domainler (sultan5.com, marcopanel.site, harem5.com) bu tunele CNAME'lendi.
+
+## YENI MIMARI (12 Eyl, nihai): Cloudflare PROXY KAPALI — dogrudan origin
+- Neden: kullanicinin agindaki resolver eski/yabanci Cloudflare edge IP'sini onbellekte tutuyordu ->
+  tarayicida surekli "Error 1034 Edge IP Restricted". Tunel/proxy ne yapilirsa yapilsin kullanici goremiyordu.
+- Cozum: marcopanel.site, sultan5.com, harem5.com icin @ + www = A kaydi 203.161.57.207,
+  proxied=FALSE (gri bulut), TTL 120. Cloudflare artik yalnizca DNS saglayicisi.
+- cloudflared (tunel) devre disi: `cloudflared service uninstall` + systemctl disable. Tuneller kullanilmiyor.
+- HTTPS artik tamamen origin'de (Let's Encrypt):
+  - panel: certbot ile marcopanel.site sertifikasi (mevcut, panel server blogunda)
+  - reklam domainleri: tek SAN sertifikasi, cert adi "ads" -> /etc/letsencrypt/live/ads/
+    ve /etc/nginx/sites-enabled/adcore-ads-ssl icinde `listen 443 ssl default_server` blogu
+    (SNI panel domainine uymayan her istek buraya duser, /admin -> 404, Host basligi proxy'e aktarilir).
+  - NOT: sunucuda Nginx 1.24 var; `http2 on;` direktifi YOK (1.25+). Kullanilmiyor.
+- Yeni reklam domaini ekleme akisi:
+  1) Panel -> Cloudflare/DNS -> domaini ekle (A kaydi, proxy KAPALI olmali),
+  2) sunucuda `bash /opt/adcore/deploy/ssl-ads.sh sultan5.com <yenidomain>` (tum reklam domainlerini yaz),
+  3) script sertifikayi --expand ile yeniler ve nginx'i reload eder.
+- Panel kodundaki Tunnel karti/uclari kodda duruyor ama kullanilmiyor; "Tuneli sifirdan kur" butonuna BASMAYIN.
