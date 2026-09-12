@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api";
-import type { CfTunnelAttachResult, CfTunnelRebuildResult, CfTunnelStatus } from "@/lib/types";
+import type { CfDirectModeResult, CfTunnelAttachResult, CfTunnelRebuildResult, CfTunnelStatus } from "@/lib/types";
 import { Copy, RefreshCw, Radio } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ function errText(e: unknown): string {
 export default function TunnelPanel({ enabled }: { enabled: boolean }) {
   const qc = useQueryClient();
   const [result, setResult] = useState<CfTunnelRebuildResult | null>(null);
+  const [direct, setDirect] = useState<CfDirectModeResult | null>(null);
 
   const tunnelQ = useQuery({
     queryKey: ["cf-tunnel"],
@@ -47,6 +48,17 @@ export default function TunnelPanel({ enabled }: { enabled: boolean }) {
       void qc.invalidateQueries({ queryKey: ["cf-tunnel"] });
       void qc.invalidateQueries({ queryKey: ["cf-verify-domains"] });
       toast.success(`${r.panel_domain} tünele bağlandı`);
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+
+  const directMode = useMutation({
+    mutationFn: () => apiPost<CfDirectModeResult>("/cloudflare/direct-mode", { include_panel: true }),
+    onSuccess: (r) => {
+      setDirect(r);
+      void qc.invalidateQueries({ queryKey: ["cf-tunnel"] });
+      void qc.invalidateQueries({ queryKey: ["cf-verify-domains"] });
+      toast.success(`${r.wired_domains.length} domain doğrudan ${r.server_ip} adresine bağlandı`);
     },
     onError: (e) => toast.error(errText(e)),
   });
@@ -109,6 +121,56 @@ export default function TunnelPanel({ enabled }: { enabled: boolean }) {
         <p className="mt-3 text-xs text-amber-300" data-testid="tunnel-message">
           {t.message}
         </p>
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          className={btn}
+          disabled={!enabled || directMode.isPending}
+          onClick={() => directMode.mutate()}
+          data-testid="direct-mode-button"
+        >
+          <Radio className="h-3.5 w-3.5" /> Doğrudan sunucuya bağla (önerilen)
+        </button>
+        <span className="text-[11px] text-slate-500">
+          Tüm domainler proxy KAPALI A kaydına çevrilir — 1034/522/530 edge hataları imkânsız olur.
+        </span>
+      </div>
+
+      {direct ? (
+        <div
+          className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4"
+          data-testid="direct-mode-result"
+        >
+          <p className="text-xs text-emerald-300">
+            {direct.wired_domains.join(", ") || "-"} → {direct.server_ip} (proxy kapalı)
+          </p>
+          {direct.ssl_command ? (
+            <>
+              <p className="mt-2 text-[11px] text-slate-400">
+                HTTPS için sunucuda çalıştırın:
+              </p>
+              <pre className="mt-1 overflow-auto rounded-lg bg-[#0B0E17] p-2.5 font-mono text-[11px] text-slate-300">
+{direct.ssl_command}
+              </pre>
+              <button
+                className={ghost}
+                onClick={() => {
+                  void navigator.clipboard.writeText(direct.ssl_command);
+                  toast.success("Komut kopyalandı");
+                }}
+                data-testid="direct-mode-copy-button"
+              >
+                <Copy className="h-3.5 w-3.5" /> Komutu kopyala
+              </button>
+            </>
+          ) : null}
+          {direct.warnings.length > 0 ? (
+            <p className="mt-2 text-[11px] text-rose-300" data-testid="direct-mode-warnings">
+              {direct.warnings.join(" | ")}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

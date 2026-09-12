@@ -234,6 +234,7 @@ export default function AdminSiteEditor() {
           <TabsTrigger value="tasarim" data-testid="tab-tasarim">Tasarım</TabsTrigger>
           <TabsTrigger value="popup" data-testid="tab-popup">Pop-up</TabsTrigger>
           <TabsTrigger value="reklam" data-testid="tab-reklam">Reklam Alanları</TabsTrigger>
+          <TabsTrigger value="seo" data-testid="tab-seo">SEO / Sekme</TabsTrigger>
           <TabsTrigger value="onizleme" data-testid="tab-onizleme">Canlı Önizleme</TabsTrigger>
           <TabsTrigger value="istatistik" data-testid="tab-istatistik">İstatistikler</TabsTrigger>
         </TabsList>
@@ -241,6 +242,83 @@ export default function AdminSiteEditor() {
         {/* TIKLAMA İSTATİSTİKLERİ */}
         <TabsContent value="istatistik" className="mt-6">
           <SiteStatsPanel siteId={siteId} />
+        </TabsContent>
+
+        {/* SEO / SEKME — Google sonucu ve tarayıcı sekmesi */}
+        <TabsContent value="seo" className="mt-6">
+          <div className="grid max-w-3xl gap-4 rounded-xl border border-[#1E293B] bg-[#121620] p-6">
+            <p className="text-sm leading-relaxed text-slate-400">
+              Bu alanlar Google sonuçlarında ve tarayıcı sekmesinde görünür. Her domain kendi
+              sitesinin değerlerini kullanır. Boş bırakılırsa Grid Başlığı ve Slogan kullanılır.
+            </p>
+
+            <Field label="Sayfa Başlığı (sekme + Google başlığı)" id="f-seo-title">
+              <Input
+                id="f-seo-title"
+                value={draft.seo_title}
+                onChange={(e) => set("seo_title", e.target.value)}
+                placeholder="Güvenilir Siteler"
+                data-testid="field-seo-title"
+              />
+            </Field>
+            <Field label="Açıklama (Google sonucundaki alt yazı — 150-160 karakter ideal)" id="f-seo-desc">
+              <Textarea
+                id="f-seo-desc"
+                rows={3}
+                value={draft.seo_description}
+                onChange={(e) => set("seo_description", e.target.value)}
+                placeholder="Güvenilir Siteler. HerkulBet 500TL Deneme, Etobahis 10.000 Yatır 12.000"
+                data-testid="field-seo-description"
+              />
+              <span className="mt-1 block text-xs text-slate-500" data-testid="seo-description-count">
+                {draft.seo_description.length} karakter
+              </span>
+            </Field>
+            <Field label="Sekme İkonu / Favicon (kütüphaneden seç veya yükle)" id="f-favicon">
+              <LogoPickerDialog
+                value={draft.favicon_url}
+                onChange={(url) => set("favicon_url", url)}
+                testId="field-favicon"
+              />
+            </Field>
+
+            {/* Google sonucu önizlemesi */}
+            <div
+              className="rounded-xl border border-[#1E293B] bg-[#0B0E17] p-4"
+              data-testid="seo-preview"
+            >
+              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                Google'da böyle görünecek
+              </p>
+              <div className="flex items-center gap-2">
+                {draft.favicon_url ? (
+                  <img
+                    src={draft.favicon_url}
+                    alt="favicon"
+                    className="h-6 w-6 rounded-full bg-white object-contain p-0.5"
+                    data-testid="seo-preview-favicon"
+                  />
+                ) : (
+                  <span className="h-6 w-6 rounded-full bg-slate-700" />
+                )}
+                <div className="leading-tight">
+                  <p className="text-xs text-slate-300">{draft.domains[0] ?? draft.slug}</p>
+                  <p className="text-[11px] text-slate-500">
+                    https://{draft.domains[0] ?? `${draft.slug}.com`}
+                  </p>
+                </div>
+              </div>
+              <p
+                className="mt-2 text-lg text-[#8ab4f8] underline-offset-2 hover:underline"
+                data-testid="seo-preview-title"
+              >
+                {draft.seo_title || draft.title || draft.name}
+              </p>
+              <p className="mt-1 text-sm text-slate-400" data-testid="seo-preview-description">
+                {draft.seo_description || draft.tagline || "Açıklama girilmedi."}
+              </p>
+            </div>
+          </div>
         </TabsContent>
 
         {/* CANLI CİHAZ ÖNİZLEMESİ */}

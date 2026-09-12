@@ -234,3 +234,18 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   snapshot'in uzerine yazar (source_site_slug + preview_image_url da guncellenir). Daha once o sablonla
   olusturulmus siteler etkilenmez. UI: kart uzerindeki dairesel yenile ikonu -> template-refresh-dialog.
 - harem5.com Cloudflare'den TAMAMEN silindi (zone delete). Kalan zone'lar: marcopanel.site, sultan5.com.
+
+## SEO / Sekme alanlari (12 Eyl)
+- Site modeline eklendi: seo_title, seo_description, favicon_url (SiteBase + SiteUpdate + TS Site).
+- PublicPortal, frontend/src/lib/usePortalHead.ts ile document.title, meta[name=description],
+  og:title/og:description ve link[rel=icon]/apple-touch-icon degerlerini SITEYE gore ayarlar.
+  Bos birakilirsa sirasiyla title -> name ve tagline kullanilir.
+- Panel: site editorunde "SEO / Sekme" sekmesi (tab-seo): baslik, aciklama (karakter sayaci),
+  favicon (LogoPickerDialog ile kutuphaneden) ve "Google'da boyle gorunecek" onizleme karti.
+- Her domain kendi sitesinin degerlerini kullanir; index.html'deki statik baslik yalnizca panel icin gecerli.
+
+## Dogrudan baglanti modu (direct mode)
+- POST /api/cloudflare/direct-mode {server_ip?, include_panel} -> tum site domainleri (+panel) icin
+  @ ve www A kaydi = server_ip, proxied=FALSE, ttl=120; settings.tunnel_id temizlenir (tunel modundan cikis).
+  Yanit ssl_command ile `bash /opt/adcore/deploy/ssl-ads.sh <domainler>` komutunu verir.
+- Panelde Cloudflare/DNS sayfasindaki karttan "Doğrudan sunucuya bağla (önerilen)" butonu.

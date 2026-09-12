@@ -61,6 +61,10 @@ class SiteBase(BaseModel):
     theme: Theme = Field(default_factory=Theme)
     popup: Popup = Field(default_factory=Popup)
     custom_css: str = ""
+    # Arama motoru / tarayıcı sekmesi alanları (her domain kendi değerlerini kullanır).
+    seo_title: str = ""  # boşsa `title` kullanılır
+    seo_description: str = ""
+    favicon_url: str = ""  # sekme ikonu (Kütüphane'den seçilebilir)
     active: bool = True
 
 
@@ -81,6 +85,9 @@ class SiteUpdate(BaseModel):
     theme: Optional[Theme] = None
     popup: Optional[Popup] = None
     custom_css: Optional[str] = None
+    seo_title: Optional[str] = None
+    seo_description: Optional[str] = None
+    favicon_url: Optional[str] = None
     active: Optional[bool] = None
 
 

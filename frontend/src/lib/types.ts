@@ -47,6 +47,9 @@ export interface Site {
   theme: Theme;
   popup: Popup;
   custom_css: string;
+  seo_title: string;
+  seo_description: string;
+  favicon_url: string;
   active: boolean;
   is_default: boolean;
   created_at: string;
@@ -287,6 +290,13 @@ export interface TemplateSiteCreate {
   name?: string;
   domains?: string[];
   include_slots?: boolean;
+}
+
+export interface CfDirectModeResult {
+  server_ip: string;
+  wired_domains: string[];
+  warnings: string[];
+  ssl_command: string;
 }
 
 export interface CfTunnelAttachResult {

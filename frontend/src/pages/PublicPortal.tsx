@@ -5,6 +5,7 @@ import type { PublicSite } from "@/lib/types";
 import { DEFAULT_THEME } from "@/lib/types";
 import AdSlotRenderer from "@/components/portal/AdSlotRenderer";
 import WelcomePopupModal from "@/components/portal/WelcomePopupModal";
+import usePortalHead from "@/lib/usePortalHead";
 
 // Mobilde de aynı kolon sayısı: sıra ve yan yana görünüm masaüstüyle birebir aynı kalır.
 const COLS: Record<number, string> = {
@@ -33,6 +34,13 @@ export default function PublicPortal() {
   const slots = isError ? [] : (data?.slots ?? []);
   const theme = site?.theme ?? DEFAULT_THEME;
   const ticker = site?.marquee?.length ? site.marquee : ["Güncel giriş adresleri 7/24 yayında"];
+
+  // Sekme başlığı / Google açıklaması / favicon — panelden yönetilir (SEO sekmesi).
+  usePortalHead({
+    title: site?.seo_title || site?.title || site?.name || "",
+    description: site?.seo_description || site?.tagline || "",
+    faviconUrl: site?.favicon_url || "",
+  });
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: theme.bg, color: theme.text }}>

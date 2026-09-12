@@ -135,6 +135,18 @@ class CfTunnelRebuildRequest(BaseModel):
     include_panel: bool = True
 
 
+class CfDirectModeRequest(BaseModel):
+    server_ip: str = ""
+    include_panel: bool = True
+
+
+class CfDirectModeResult(BaseModel):
+    server_ip: str
+    wired_domains: List[str] = []
+    warnings: List[str] = []
+    ssl_command: str = ""
+
+
 class CfTunnelAttachResult(BaseModel):
     panel_domain: str
     target: str
@@ -365,7 +377,7 @@ async def account_id_or_400() -> str:
 
 
 async def wire_domain_to_target(
-    domain: str, content: str, record_type: str = "CNAME"
+    domain: str, content: str, record_type: str = "CNAME", proxied: bool = True
 ) -> List[CfRecord]:
     """Domainin kök + www kaydını tek hedefe bağlar; çakışan A/CNAME kayıtlarını temizler."""
     body = await call("GET", "/zones", params={"name": domain, "per_page": 5})
@@ -377,7 +389,7 @@ async def wire_domain_to_target(
     out: List[CfRecord] = []
     for name in (domain, f"www.{domain}"):
         desired = CfRecordInput(
-            type=record_type, name=name, content=content, ttl=1, proxied=True  # type: ignore[arg-type]
+            type=record_type, name=name, content=content, ttl=120, proxied=proxied  # type: ignore[arg-type]
         )
         conflicting = [r for r in records if r.name == name and r.type in ("A", "AAAA", "CNAME")]
         for extra in conflicting[1:]:
@@ -443,6 +455,59 @@ def panel_ingress(panel_domain: str) -> List[dict]:
         }
         for host in (panel_domain, f"www.{panel_domain}")
     ]
+
+
+@router.post("/direct-mode", response_model=CfDirectModeResult)
+async def direct_mode(payload: CfDirectModeRequest):
+    """ÖNERİLEN MOD: tüm domainleri Cloudflare proxy'si KAPALI şekilde doğrudan sunucuya bağlar.
+
+    Cloudflare yalnızca DNS sağlayıcısı kalır; edge kaynaklı 1034/522/530 hataları imkânsız hale
+    gelir. HTTPS sunucudaki Let's Encrypt sertifikalarıyla sağlanır (deploy/ssl-ads.sh).
+    """
+    settings = await get_settings()
+    server_ip = (payload.server_ip or settings.get("server_ip") or "").strip()
+    if not server_ip:
+        raise HTTPException(status_code=400, detail="Sunucu IP tanımlı değil")
+    try:
+        ipaddress.ip_address(server_ip)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Geçersiz sunucu IP adresi") from None
+
+    # Tünel modundan çıkıyoruz: autowire ve doğrulama artık IP bekler.
+    await db.settings.update_one(
+        {"id": SETTINGS_ID},
+        {"$set": {"server_ip": server_ip, "tunnel_id": "", "tunnel_name": ""}},
+        upsert=True,
+    )
+
+    domains: List[str] = []
+    for site in await db.sites.find().to_list(500):
+        for d in site.get("domains") or []:
+            normalized = str(d).strip().lower().removeprefix("www.")
+            if normalized and normalized not in domains:
+                domains.append(normalized)
+    if payload.include_panel:
+        panel = os.environ.get("PANEL_DOMAIN", "").strip().lower().removeprefix("www.")
+        if panel and panel not in domains:
+            domains.append(panel)
+
+    wired: List[str] = []
+    warnings: List[str] = []
+    for domain in domains:
+        try:
+            await wire_domain_to_target(domain, server_ip, record_type="A", proxied=False)
+            wired.append(domain)
+        except (CloudflareError, HTTPException) as exc:
+            warnings.append(f"{domain}: {getattr(exc, 'detail', str(exc))}")
+
+    return CfDirectModeResult(
+        server_ip=server_ip,
+        wired_domains=wired,
+        warnings=warnings,
+        ssl_command=(
+            "bash /opt/adcore/deploy/ssl-ads.sh " + " ".join(wired) if wired else ""
+        ),
+    )
 
 
 @router.post("/tunnel/attach-panel", response_model=CfTunnelAttachResult)
