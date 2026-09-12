@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { HostGate, AdminOnlyHost } from "@/components/HostGate";
 import PublicPortal from "@/pages/PublicPortal";
@@ -7,7 +7,7 @@ import AdminSites from "@/pages/AdminSites";
 import AdminSiteEditor from "@/pages/AdminSiteEditor";
 import AdminLibrary from "@/pages/AdminLibrary";
 import AdminTemplates from "@/pages/AdminTemplates";
-import AdminCloudflare from "@/pages/AdminCloudflare";
+import AdminDomains from "@/pages/AdminDomains";
 
 // One <Route> per page in src/pages; BrowserRouter already wraps this in main.tsx.
 // Kök adres Host'a göre dallanır (HostGate); /admin yalnızca panel domaininde açılır.
@@ -57,13 +57,15 @@ export default function App() {
           }
         />
         <Route
-          path="/admin/cloudflare"
+          path="/admin/domains"
           element={
             <AdminOnlyHost>
-              <AdminCloudflare />
+              <AdminDomains />
             </AdminOnlyHost>
           }
         />
+        {/* Eski Cloudflare sayfası kaldırıldı — yeni sayfaya yönlendirilir */}
+        <Route path="/admin/cloudflare" element={<Navigate to="/admin/domains" replace />} />
         <Route path="*" element={<PublicPortal />} />
       </Routes>
       <Toaster richColors />

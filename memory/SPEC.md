@@ -292,3 +292,16 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   /auth/me 401 donuyor ve kullanici giris ekranina geri atiliyordu.
 - logout da ayni niteliklerle delete_cookie yapar (nitelikler uyusmazsa tarayici cerezi silmez).
 - Sifre: her iki ortamda admin / 1727Fd40. (preview db.admins kaydi elle guncellendi).
+
+## Panel sadelestirme (12 Eyl): Cloudflare bolumleri kaldirildi
+- Silinen dosyalar: pages/AdminCloudflare.tsx, components/admin/CloudflarePanels.tsx, components/admin/TunnelPanel.tsx.
+- Yeni sayfa: pages/AdminDomains.tsx -> rota /admin/domains, sol menu "Domainler & SSL".
+  Icerik: Sunucu IP karti (PUT /api/cloudflare/settings ile ayni ayar dokumanina yazar),
+  "Kayit firmasinda DNS ayari" adimlari, SslPanel (yayina alma) ve "Panelde Bagli Domainler" listesi
+  (aktif/pasif etiketi, Ac, Yonet, Kaldir -> PUT /api/sites/{id} ile domains guncellenir).
+- /admin/cloudflare rotasi /admin/domains'e yonlendirir (Navigate replace).
+- Backend cloudflare router'i DURUYOR (status/settings uclari sunucu IP'si icin kullaniliyor);
+  yalnizca panel arayuzunden Cloudflare yonetimi kaldirildi.
+- SSL karti duzeltmeleri: settings id "cloudflare" (onceden "singleton" -> server_ip bos geliyordu),
+  DNS kontrolu Cloudflare DoH (1.1.1.1) uzerinden canli yapilir, Yenile butonunda spinner + toast.
+- Sertifika durumu: /etc/letsencrypt/live/ads SAN = saray5.com, sultan5.com, www.* (11 Ara 2026'ya kadar).
