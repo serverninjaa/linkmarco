@@ -271,3 +271,17 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - Portal: status=="pending" ise components/portal/DomainPendingScreen.tsx -> "Domain hazirlaniyor" ekrani.
 - Panel: site editoru > Domainler sekmesinde her satirda "Aktif Et" butonu; aktif olanda "AKTIF" etiketi.
   Aktif domain silinirse active_domain temizlenir.
+
+## Tek tikla yayina alma / SSL (12 Eyl)
+- backend/routers/ssl.py -> /api/ssl (require_admin):
+  GET ""       : her reklam domaini icin resolved_ip, dns_ok (settings.server_ip ile karsilastirma),
+                 cert_ok (/etc/letsencrypt/live/ads/cert.pem SAN listesi), ready, issue metni
+                 + script_available / certbot_available bayraklari.
+  POST "/issue": domainler panelde kayitli olmali (yoksa 422). Sertifika TEK SAN dosyasinda tutuldugu
+                 icin mevcut tum reklam domainleri birlikte gonderilir; deploy/ssl-ads.sh bash ile
+                 (shell=False, argv listesi) cagrilir, cikti son 4000 karakter donulur.
+                 certbot/script yoksa 503 (preview ortami boyle).
+- Panel: Cloudflare/DNS sayfasinda "Domain Yayina Alma (SSL)" karti (SslPanel.tsx) — her domain icin
+  DNS/SSL rozetleri, "Sertifika al & yayına al" butonu (DNS dogru degilse pasif) ve komut ciktisi.
+- YENI DOMAIN AKISI (onerilen, Cloudflare'sız): kayit firmasinda A kaydi -> 203.161.57.207,
+  panelde domaini ekle + Aktif Et, panelden "Sertifika al & yayına al". SSH gerekmez.

@@ -295,6 +295,31 @@ export interface TemplateSiteCreate {
   include_slots?: boolean;
 }
 
+export interface DomainSslStatus {
+  domain: string;
+  site_slug: string;
+  resolved_ip: string;
+  dns_ok: boolean;
+  cert_ok: boolean;
+  ready: boolean;
+  issue: string;
+}
+
+export interface SslStatus {
+  server_ip: string;
+  script_available: boolean;
+  certbot_available: boolean;
+  cert_domains: string[];
+  domains: DomainSslStatus[];
+}
+
+export interface SslIssueResult {
+  ok: boolean;
+  domains: string[];
+  output: string;
+  message: string;
+}
+
 export interface CfDirectModeResult {
   server_ip: string;
   wired_domains: string[];

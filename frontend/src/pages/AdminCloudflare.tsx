@@ -6,6 +6,7 @@ import { Cloud, Server, ShieldCheck, Copy, Plus, Trash2, RefreshCw, Zap, Check, 
 import { toast } from "sonner";
 import { DomainVerifyPanel, ZoneSslPanel } from "@/components/admin/CloudflarePanels";
 import TunnelPanel from "@/components/admin/TunnelPanel";
+import SslPanel from "@/components/admin/SslPanel";
 
 const NGINX = `server {
   listen 80;
@@ -195,7 +196,9 @@ export default function AdminCloudflare() {
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-[#1E293B] bg-[#121620] p-6">
           <h2 className="font-heading text-lg font-bold tracking-tight">Sunucu IP adresi</h2>
-          <p className="mt-1 text-sm text-slate-400">A kayıtları bu IP'ye yazılır (proxy açık).</p>
+          <p className="mt-1 text-sm text-slate-400">
+            A kayıtları bu IP'ye yazılır (proxy KAPALI — trafik doğrudan sunucuya gider).
+          </p>
           <div className="mt-4 flex gap-2">
             <input
               className={field}
@@ -275,6 +278,7 @@ export default function AdminCloudflare() {
       </div>
 
       <div className="mt-8 grid gap-5">
+        <SslPanel enabled={true} />
         <TunnelPanel enabled={live} />
         <DomainVerifyPanel live={live} />
         <ZoneSslPanel zones={zonesQ.data ?? []} />
