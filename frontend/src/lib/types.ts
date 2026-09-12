@@ -245,6 +245,12 @@ export interface CfTunnelStatus {
   message?: string | null;
 }
 
+export interface CfTunnelAttachResult {
+  panel_domain: string;
+  target: string;
+  records: string[];
+}
+
 export interface CfTunnelRebuildResult {
   tunnel_id: string;
   tunnel_name: string;

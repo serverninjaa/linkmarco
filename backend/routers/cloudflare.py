@@ -135,6 +135,12 @@ class CfTunnelRebuildRequest(BaseModel):
     include_panel: bool = True
 
 
+class CfTunnelAttachResult(BaseModel):
+    panel_domain: str
+    target: str
+    records: List[str] = []
+
+
 class CfTunnelRebuildResult(BaseModel):
     tunnel_id: str
     tunnel_name: str
@@ -423,6 +429,46 @@ async def tunnel_status():
         colos=sorted({c.get("colo_name", "") for c in conns if c.get("colo_name")}),
         ingress_ok=any(i.get("service", "").startswith("http://127.0.0.1") for i in ingress),
         target=tunnel_target(tunnel_id),
+    )
+
+
+def panel_ingress(panel_domain: str) -> List[dict]:
+    """Panel domaini origin'de 80 → 443 yönlendirmesi yapar; tünelde HTTPS origin şart
+    (aksi halde sonsuz redirect döngüsü). Sertifika Certbot'tan geldiği için doğrulanabilir."""
+    return [
+        {
+            "hostname": host,
+            "service": "https://127.0.0.1:443",
+            "originRequest": {"originServerName": panel_domain},
+        }
+        for host in (panel_domain, f"www.{panel_domain}")
+    ]
+
+
+@router.post("/tunnel/attach-panel", response_model=CfTunnelAttachResult)
+async def tunnel_attach_panel():
+    """Panel domainini mevcut tünele ekler — yeni token/VPS işlemi gerektirmez."""
+    settings = await get_settings()
+    tunnel_id = settings.get("tunnel_id") or ""
+    if not tunnel_id:
+        raise HTTPException(status_code=400, detail="Önce tüneli kurun")
+    panel_domain = os.environ.get("PANEL_DOMAIN", "").strip().lower().removeprefix("www.")
+    if not panel_domain:
+        raise HTTPException(
+            status_code=400, detail="PANEL_DOMAIN tanımlı değil (backend/.env)"
+        )
+    account_id = await account_id_or_400()
+    ingress = panel_ingress(panel_domain) + [{"service": "http://127.0.0.1:80"}]
+    await call(
+        "PUT",
+        f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}/configurations",
+        json={"config": {"ingress": ingress}},
+    )
+    records = await wire_domain_to_target(panel_domain, tunnel_target(tunnel_id))
+    return CfTunnelAttachResult(
+        panel_domain=panel_domain,
+        target=tunnel_target(tunnel_id),
+        records=[f"{r.type} {r.name} → {r.content}" for r in records],
     )
 
 

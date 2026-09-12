@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api";
-import type { CfTunnelRebuildResult, CfTunnelStatus } from "@/lib/types";
+import type { CfTunnelAttachResult, CfTunnelRebuildResult, CfTunnelStatus } from "@/lib/types";
 import { Copy, RefreshCw, Radio } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +37,16 @@ export default function TunnelPanel({ enabled }: { enabled: boolean }) {
       void qc.invalidateQueries({ queryKey: ["cf-tunnel"] });
       void qc.invalidateQueries({ queryKey: ["cf-verify-domains"] });
       toast.success(`Tünel kuruldu — ${r.rewired_domains.length} domain bağlandı`);
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+
+  const attachPanel = useMutation({
+    mutationFn: () => apiPost<CfTunnelAttachResult>("/cloudflare/tunnel/attach-panel", {}),
+    onSuccess: (r) => {
+      void qc.invalidateQueries({ queryKey: ["cf-tunnel"] });
+      void qc.invalidateQueries({ queryKey: ["cf-verify-domains"] });
+      toast.success(`${r.panel_domain} tünele bağlandı`);
     },
     onError: (e) => toast.error(errText(e)),
   });
@@ -110,6 +120,14 @@ export default function TunnelPanel({ enabled }: { enabled: boolean }) {
         >
           <RefreshCw className={`h-3.5 w-3.5 ${rebuild.isPending ? "animate-spin" : ""}`} />
           Tüneli sıfırdan kur
+        </button>
+        <button
+          className={ghost}
+          disabled={!enabled || attachPanel.isPending || !t?.tunnel_id}
+          onClick={() => attachPanel.mutate()}
+          data-testid="tunnel-attach-panel-button"
+        >
+          Panel domainini de bağla
         </button>
         <span className="text-[11px] text-slate-500">
           Eski tüneller silinir, yeni tünel kurulur ve tüm domainler yeniden bağlanır.

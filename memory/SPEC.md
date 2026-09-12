@@ -178,3 +178,10 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
   - /verify-domains beklenen hedef olarak tunel CNAME'ini kontrol eder.
 - Yeni domain eklemek icin tunel config'i degistirmek GEREKMEZ: sadece autowire (CNAME) yeter.
 - Aktif tunel: marco-tunnel / 3ca29d12-9f9f-410d-a8a9-e38400239cd2 (VPS'te cloudflared systemd servisi).
+
+### Panel domaini tunelde (ONEMLI)
+- POST /api/cloudflare/tunnel/attach-panel: PANEL_DOMAIN'i mevcut tunele ekler (yeni token/VPS islemi YOK).
+- Panel origin'de 80 -> 443 redirect yapar; bu yuzden panel icin ingress `https://127.0.0.1:443` +
+  originRequest.originServerName = PANEL_DOMAIN olmali. http://127.0.0.1:80 kullanilirsa sonsuz redirect dongusu olur.
+- Ingress sirasi: panel hostname kurallari -> en sonda catch-all {"service":"http://127.0.0.1:80"} (reklam domainleri).
+- marcopanel.site ve www.marcopanel.site 12 Eyl itibariyle tunel CNAME'inde; A kaydi kalmadi.
