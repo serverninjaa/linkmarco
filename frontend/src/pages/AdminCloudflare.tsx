@@ -5,6 +5,7 @@ import type { CfDomainRemoveResult, CfRecord, CfRecordInput, CfStatus, CfZone, S
 import { Cloud, Server, ShieldCheck, Copy, Plus, Trash2, RefreshCw, Zap, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { DomainVerifyPanel, ZoneSslPanel } from "@/components/admin/CloudflarePanels";
+import TunnelPanel from "@/components/admin/TunnelPanel";
 
 const NGINX = `server {
   listen 80;
@@ -274,6 +275,7 @@ export default function AdminCloudflare() {
       </div>
 
       <div className="mt-8 grid gap-5">
+        <TunnelPanel enabled={live} />
         <DomainVerifyPanel live={live} />
         <ZoneSslPanel zones={zonesQ.data ?? []} />
       </div>
@@ -467,7 +469,7 @@ export default function AdminCloudflare() {
           <div className="space-y-2" data-testid="cf-domain-list">
             {domains.map(({ d, slug, siteId }) => (
               <div
-                key={d}
+                key={`${siteId}-${d}`}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#1E293B] bg-[#0B0E17] px-4 py-2.5"
                 data-testid="cf-domain-row"
               >

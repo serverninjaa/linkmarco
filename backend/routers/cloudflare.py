@@ -1,7 +1,9 @@
 """Cloudflare / DNS yönetimi — zone listeleme & ekleme, A/CNAME kayıt CRUD, otomatik bağlama."""
 
 import asyncio
+import base64
 import ipaddress
+import os
 import socket
 from typing import List, Literal, Optional
 
@@ -114,6 +116,33 @@ class CfDomainRemoveResult(BaseModel):
     removed_from_site: bool
     deleted_records: List[str] = []
     warning: Optional[str] = None
+
+
+class CfTunnelStatus(BaseModel):
+    configured: bool = False
+    tunnel_id: str = ""
+    tunnel_name: str = ""
+    status: str = "missing"  # healthy | degraded | down | missing
+    connections: int = 0
+    colos: List[str] = []
+    ingress_ok: bool = False
+    target: str = ""
+    message: Optional[str] = None
+
+
+class CfTunnelRebuildRequest(BaseModel):
+    name: str = Field(default="marco-tunnel", min_length=3, max_length=64)
+    include_panel: bool = True
+
+
+class CfTunnelRebuildResult(BaseModel):
+    tunnel_id: str
+    tunnel_name: str
+    target: str
+    install_command: str
+    deleted_tunnels: List[str] = []
+    rewired_domains: List[str] = []
+    warnings: List[str] = []
 
 
 class CfAutowireResult(BaseModel):
@@ -314,10 +343,198 @@ async def delete_record(zone_id: str, record_id: str):
     return {"ok": True}
 
 
+# ---- Cloudflare Tunnel -----------------------------------------------------
+def tunnel_target(tunnel_id: str) -> str:
+    return f"{tunnel_id}.cfargotunnel.com"
+
+
+async def account_id_or_400() -> str:
+    settings = await get_settings()
+    account_id = settings.get("account_id") or await first_account_id()
+    if not account_id:
+        raise HTTPException(
+            status_code=400, detail="Cloudflare hesap kimliği bulunamadı (Account:Read izni gerekli)"
+        )
+    return account_id
+
+
+async def wire_domain_to_target(
+    domain: str, content: str, record_type: str = "CNAME"
+) -> List[CfRecord]:
+    """Domainin kök + www kaydını tek hedefe bağlar; çakışan A/CNAME kayıtlarını temizler."""
+    body = await call("GET", "/zones", params={"name": domain, "per_page": 5})
+    results = body.get("result") or []
+    if not results:
+        raise HTTPException(status_code=404, detail=f"{domain} için Cloudflare zone bulunamadı")
+    zone_id = results[0]["id"]
+    records = await list_records(zone_id)
+    out: List[CfRecord] = []
+    for name in (domain, f"www.{domain}"):
+        desired = CfRecordInput(
+            type=record_type, name=name, content=content, ttl=1, proxied=True  # type: ignore[arg-type]
+        )
+        conflicting = [r for r in records if r.name == name and r.type in ("A", "AAAA", "CNAME")]
+        for extra in conflicting[1:]:
+            await call("DELETE", f"/zones/{zone_id}/dns_records/{extra.id}")
+        if conflicting:
+            out.append(await update_record(zone_id, conflicting[0].id, desired))
+        else:
+            out.append(await create_record(zone_id, desired))
+    for setting, value in (("ipv6", "off"), ("ssl_automatic_mode", "custom"), ("ssl", "flexible")):
+        try:
+            await cf_request("PATCH", f"/zones/{zone_id}/settings/{setting}", json={"value": value})
+        except CloudflareError:
+            pass
+    return out
+
+
+@router.get("/tunnel", response_model=CfTunnelStatus)
+async def tunnel_status():
+    settings = await get_settings()
+    tunnel_id = settings.get("tunnel_id") or ""
+    if not configured():
+        return CfTunnelStatus(message="Cloudflare kimliği yok")
+    if not tunnel_id:
+        return CfTunnelStatus(
+            configured=True, message="Henüz tünel kurulmadı — 'Tüneli sıfırdan kur'a basın"
+        )
+    account_id = await account_id_or_400()
+    try:
+        body = await cf_request("GET", f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}")
+        cfg = await cf_request(
+            "GET", f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}/configurations"
+        )
+    except CloudflareError as exc:
+        return CfTunnelStatus(
+            configured=True,
+            tunnel_id=tunnel_id,
+            tunnel_name=settings.get("tunnel_name") or "",
+            message=str(exc),
+        )
+    result = body.get("result") or {}
+    conns = result.get("connections") or []
+    ingress = ((cfg.get("result") or {}).get("config") or {}).get("ingress") or []
+    return CfTunnelStatus(
+        configured=True,
+        tunnel_id=tunnel_id,
+        tunnel_name=result.get("name") or "",
+        status=result.get("status") or "down",
+        connections=len(conns),
+        colos=sorted({c.get("colo_name", "") for c in conns if c.get("colo_name")}),
+        ingress_ok=any(i.get("service", "").startswith("http://127.0.0.1") for i in ingress),
+        target=tunnel_target(tunnel_id),
+    )
+
+
+@router.post("/tunnel/rebuild", response_model=CfTunnelRebuildResult)
+async def tunnel_rebuild(payload: CfTunnelRebuildRequest):
+    """Tüm tünelleri silip tek bir 'catch-all' tünel kurar ve domainleri ona bağlar."""
+    account_id = await account_id_or_400()
+    warnings: List[str] = []
+    deleted: List[str] = []
+
+    body = await call("GET", f"/accounts/{account_id}/cfd_tunnel", params={"is_deleted": "false"})
+    for t in body.get("result") or []:
+        try:
+            await cf_request("DELETE", f"/accounts/{account_id}/cfd_tunnel/{t['id']}/connections")
+            await cf_request("DELETE", f"/accounts/{account_id}/cfd_tunnel/{t['id']}")
+            deleted.append(t.get("name") or t["id"])
+        except CloudflareError as exc:
+            warnings.append(f"{t.get('name')} silinemedi: {exc}")
+
+    secret = base64.b64encode(os.urandom(32)).decode()
+    created = await call(
+        "POST",
+        f"/accounts/{account_id}/cfd_tunnel",
+        json={"name": payload.name.strip(), "tunnel_secret": secret, "config_src": "cloudflare"},
+    )
+    tunnel = created["result"]
+    tunnel_id = tunnel["id"]
+
+    # Catch-all ingress: hostname yazmıyoruz — CNAME'i bu tünele bakan HER domain çalışır,
+    # cloudflared orijinal Host başlığını olduğu gibi Nginx'e iletir.
+    await call(
+        "PUT",
+        f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}/configurations",
+        json={"config": {"ingress": [{"service": "http://127.0.0.1:80"}]}},
+    )
+    token_body = await call("GET", f"/accounts/{account_id}/cfd_tunnel/{tunnel_id}/token")
+    install_token = token_body.get("result") or ""
+
+    await db.settings.update_one(
+        {"id": SETTINGS_ID},
+        {"$set": {"tunnel_id": tunnel_id, "tunnel_name": tunnel["name"], "account_id": account_id}},
+        upsert=True,
+    )
+
+    target = tunnel_target(tunnel_id)
+    domains: List[str] = []
+    for site in await db.sites.find().to_list(500):
+        for d in site.get("domains") or []:
+            normalized = str(d).strip().lower().removeprefix("www.")
+            if normalized and normalized not in domains:
+                domains.append(normalized)
+    panel_domain = os.environ.get("PANEL_DOMAIN", "").strip().lower().removeprefix("www.")
+    if payload.include_panel and panel_domain and panel_domain not in domains:
+        domains.append(panel_domain)
+
+    rewired: List[str] = []
+    for domain in domains:
+        try:
+            await wire_domain_to_target(domain, target)
+            rewired.append(domain)
+        except (CloudflareError, HTTPException) as exc:
+            warnings.append(f"{domain}: {getattr(exc, 'detail', str(exc))}")
+
+    install_command = (
+        "curl -fsSL -o /tmp/cloudflared.deb "
+        "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb "
+        "&& dpkg -i /tmp/cloudflared.deb; "
+        "cloudflared service uninstall 2>/dev/null; "
+        f"cloudflared service install {install_token} "
+        "&& systemctl enable --now cloudflared && sleep 8 && systemctl is-active cloudflared"
+    )
+    return CfTunnelRebuildResult(
+        tunnel_id=tunnel_id,
+        tunnel_name=tunnel["name"],
+        target=target,
+        install_command=install_command,
+        deleted_tunnels=deleted,
+        rewired_domains=rewired,
+        warnings=warnings,
+    )
+
+
 @router.post("/autowire", response_model=CfAutowireResult)
 async def autowire(payload: CfAutowireRequest):
-    """Domain için zone'u bulur/oluşturur, @ + www A kaydını yazar, istenirse siteye bağlar."""
+    """Domain için zone'u bulur/oluşturur, kök + www kaydını yazar, istenirse siteye bağlar.
+
+    Tünel kuruluysa IP yerine tünele bakan CNAME yazılır (origin IP hiç açığa çıkmaz).
+    """
     settings = await get_settings()
+    tunnel_id = settings.get("tunnel_id") or ""
+    if tunnel_id:
+        domain = payload.domain.strip().lower().removeprefix("www.")
+        body = await call("GET", "/zones", params={"name": domain, "per_page": 5})
+        results = body.get("result") or []
+        created_zone = False
+        if results:
+            zone = to_zone(results[0])
+        else:
+            zone = await create_zone(CfZoneCreate(name=domain))
+            created_zone = True
+        out = await wire_domain_to_target(domain, tunnel_target(tunnel_id))
+        if payload.site_id:
+            site = await db.sites.find_one({"id": payload.site_id})
+            if not site:
+                raise HTTPException(status_code=404, detail="Site bulunamadı")
+            await db.sites.update_one({"id": payload.site_id}, {"$addToSet": {"domains": domain}})
+        fresh = await call("GET", f"/zones/{zone.id}")
+        zone = to_zone(fresh["result"])
+        return CfAutowireResult(
+            zone=zone, records=out, created_zone=created_zone, name_servers=zone.name_servers
+        )
+
     server_ip = (payload.server_ip or settings.get("server_ip") or "").strip()
     if not server_ip:
         raise HTTPException(
@@ -462,6 +679,9 @@ async def verify_domains():
     """Panelde kayıtlı her domain için zone, NS delegasyonu ve A kaydı doğruluğunu kontrol eder."""
     settings = await get_settings()
     server_ip = (settings.get("server_ip") or "").strip()
+    tunnel_id = settings.get("tunnel_id") or ""
+    # Tünel kuruluysa beklenen hedef IP değil, tünel CNAME'idir.
+    expected = tunnel_target(tunnel_id) if tunnel_id else server_ip
     sites = await db.sites.find().to_list(500)
 
     zones_by_name: dict = {}
@@ -515,16 +735,16 @@ async def verify_domains():
             if root:
                 check.a_record_content = root.content
                 check.proxied = root.proxied
-                check.a_record_ok = bool(server_ip) and root.content == server_ip
+                check.a_record_ok = bool(expected) and root.content == expected
                 if not check.a_record_ok:
                     check.issues.append(
-                        f"Kök kayıt {root.content} → beklenen {server_ip or 'sunucu IP tanımsız'}"
+                        f"Kök kayıt {root.content} → beklenen {expected or 'hedef tanımsız'}"
                     )
                 if not root.proxied:
                     check.issues.append("Proxy (turuncu bulut) kapalı")
             else:
                 check.issues.append("Kök A kaydı yok")
-            check.www_ok = bool(www) and (not server_ip or www.content == server_ip)
+            check.www_ok = bool(www) and (not expected or www.content == expected)
             if not www:
                 check.issues.append("www kaydı yok")
             checks.append(check)

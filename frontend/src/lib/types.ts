@@ -233,6 +233,28 @@ export interface CfStatus {
   message?: string | null;
 }
 
+export interface CfTunnelStatus {
+  configured: boolean;
+  tunnel_id: string;
+  tunnel_name: string;
+  status: string;
+  connections: number;
+  colos: string[];
+  ingress_ok: boolean;
+  target: string;
+  message?: string | null;
+}
+
+export interface CfTunnelRebuildResult {
+  tunnel_id: string;
+  tunnel_name: string;
+  target: string;
+  install_command: string;
+  deleted_tunnels: string[];
+  rewired_domains: string[];
+  warnings: string[];
+}
+
 export interface CfDomainRemoveResult {
   domain: string;
   removed_from_site: boolean;

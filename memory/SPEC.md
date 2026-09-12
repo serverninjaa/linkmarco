@@ -166,3 +166,15 @@ Logo/görsel yükleme: PNG, JPG, WEBP, GIF, SVG — maks 10 MB (backend/routers/
 - Cloudflare zone `marcopanel.site` = CANLI yonetim paneli domaini (sunucu 203.161.57.207). DNS/SSL/IPv6 ayarlari degistirilmemeli.
 - Cloudflare zone `sultan5.com` = CANLI reklam domaini. Dogru ayarlar: ssl=flexible, ssl_automatic_mode=custom, ipv6=off. Full/strict veya ipv6=on yapilirsa site 526/1034 verir.
 - Backend testleri bu zone ayarlarini degistirmemeli; degistiriyorsa test sonunda mutlaka yukaridaki degerlere geri almalidir.
+
+## Cloudflare Tunnel mimarisi (tek tunel, catch-all)
+- Panel: Cloudflare / DNS -> "Cloudflare Tunnel" karti (frontend/src/components/admin/TunnelPanel.tsx).
+- Uclar: GET /api/cloudflare/tunnel (durum: status/connections/colos/ingress_ok/target),
+  POST /api/cloudflare/tunnel/rebuild {name, include_panel} -> eski tunelleri siler, yeni tunel kurar,
+  ingress = [{"service":"http://127.0.0.1:80"}] (hostname YOK = catch-all; cloudflared Host basligini aynen iletir),
+  paneldeki tum site domainlerini tunele CNAME'ler, VPS icin tek satir install_command doner.
+- settings dokumani: {tunnel_id, tunnel_name} eklendi. tunnel_id varsa:
+  - /autowire A kaydi degil, <tunnel_id>.cfargotunnel.com CNAME yazar (origin IP hic yayinlanmaz),
+  - /verify-domains beklenen hedef olarak tunel CNAME'ini kontrol eder.
+- Yeni domain eklemek icin tunel config'i degistirmek GEREKMEZ: sadece autowire (CNAME) yeter.
+- Aktif tunel: marco-tunnel / 3ca29d12-9f9f-410d-a8a9-e38400239cd2 (VPS'te cloudflared systemd servisi).
